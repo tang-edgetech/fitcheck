@@ -120,8 +120,15 @@ if [[ $DO_API -eq 1 ]]; then
   # (e.g. on a fresh server), never overwriting what's there
   rsync -a --ignore-existing "$SRC_DIR/backend/storage/" "$API_DIR/storage/"
 
-  step "Composer install"
-  (cd "$API_DIR" && $COMPOSER_BIN install --no-dev --optimize-autoloader --no-interaction --no-progress)
+  # Only when the PHP packages changed (or vendor/ is missing): downloading packages on shared hosting can be
+  # blocked by GitHub. Otherwise the uploaded vendor/ stays as it is and only the class map is refreshed.
+  if grep -qx 'backend/composer.lock' <<<"$CHANGED" || [[ ! -f "$API_DIR/vendor/autoload.php" ]]; then
+    step "Composer install (packages changed)"
+    (cd "$API_DIR" && $COMPOSER_BIN install --no-dev --optimize-autoloader --no-interaction --no-progress)
+  else
+    step "Refresh autoloader"
+    (cd "$API_DIR" && $COMPOSER_BIN dump-autoload --optimize --no-dev --no-interaction)
+  fi
 
   step "Maintenance mode on"
   (cd "$API_DIR" && $PHP_BIN artisan down --retry=30); MAINTENANCE=1

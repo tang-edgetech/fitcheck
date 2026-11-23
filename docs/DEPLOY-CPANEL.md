@@ -84,6 +84,16 @@ The document root must end in `/public`. That folder holds Laravel's `index.php`
 1. cPanel → **MultiPHP Manager** → tick `fitcheck-api.smartsitecp.com` → PHP **8.3** (or newer) → Apply.
 2. cPanel → **Select PHP Version** (if your host has it) → **Extensions**: make sure the extensions listed above are ticked.
 
+> **MultiPHP Manager only changes PHP for the website.** The `php` command in Terminal and cron is the server's default version, which may be older (for example 8.2). Composer and `artisan` then refuse to run ("your php version (8.2.x) does not satisfy that requirement"). So in Terminal, always use the PHP 8.3 program:
+>
+> ```bash
+> ls -d /opt/cpanel/ea-php8*/root/usr/bin/php /opt/alt/php8*/usr/bin/php 2>/dev/null   # find it
+> echo 'alias php=/opt/cpanel/ea-php83/root/usr/bin/php' >> ~/.bashrc && source ~/.bashrc
+> php -v                                                                                # must say 8.3.x
+> ```
+>
+> Use `/opt/alt/php83/usr/bin/php` instead if that's what the first command shows (CloudLinux). Cron jobs don't read `~/.bashrc`, so they use the full path (A9, D3).
+
 ### A3. Database
 1. cPanel → **MySQL Database Wizard**.
 2. Create the database `cpadmin99_fitcheck`, then a user `cpadmin99_fitcheck` with a strong password.
@@ -113,7 +123,13 @@ Afterwards, restore the development packages locally:
 composer install
 ```
 
-> If cPanel Terminal has `composer`, you can upload without `vendor` and run `composer install --no-dev --optimize-autoloader` on the server instead.
+> **Upload `vendor/` from your computer (recommended).** Shared-hosting IPs are often refused by GitHub when Composer downloads packages ("Could not fetch https://api.github.com/… Your account was suspended … You need to provide a GitHub access token"). That message is about the server's shared IP, not your GitHub account. Building `vendor/` locally avoids it completely.
+>
+> If you still want to install on the server, use PHP 8.3 (see A2). If GitHub blocks it, see Troubleshooting:
+> ```bash
+> cd ~/public_html/fitcheck.smartsitecp.com/backend
+> php "$(command -v composer)" install --no-dev --optimize-autoloader
+> ```
 
 ### A5. Upload
 1. cPanel → **File Manager** → turn on **Settings → Show Hidden Files** → open `public_html/fitcheck.smartsitecp.com/backend`.
@@ -132,7 +148,7 @@ cPanel → **Terminal**:
 
 ```bash
 cd ~/public_html/fitcheck.smartsitecp.com/backend
-php -v                                  # must say 8.3 or newer; if not, use the full path shown in A9
+php -v                                  # must say 8.3 or newer; if it says 8.2, set the alias from A2 first
 mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache
 php artisan key:generate --force
 php artisan migrate --force
@@ -309,7 +325,7 @@ nano deploy.env        # or edit it in File Manager (show hidden files)
 
 The paths in the example already match this server. Check or fill in:
 - **`PHP_BIN`:** see A9.
-- **`COMPOSER_BIN`:** run `which composer` and use the **full** path. Cron has a minimal PATH.
+- **`COMPOSER_BIN`:** Composer run **with PHP 8.3**, using full paths (cron has a minimal PATH and the default PHP may be older). Run `which composer`, then set, for example, `COMPOSER_BIN="/opt/cpanel/ea-php83/root/usr/bin/php /usr/local/bin/composer"`.
 - **`NODE_ACTIVATE`:** run `ls ~/nodevenv/public_html/fitcheck.smartsitecp.com/frontend/` to see the Node version folder (for example `22`).
 - **Telegram:** the token, chat id and thread id from D1.
 
@@ -377,6 +393,8 @@ php artisan route:cache
 | Sign-in fails with "page expired" (419) or loops back to the sign-in page | `SANCTUM_STATEFUL_DOMAINS` must be exactly `fitcheck.smartsitecp.com`. The site must be on HTTPS. Run `php artisan config:cache` after any `.env` edit. |
 | API returns 500 | `APP_KEY` missing (run A7 again), wrong database details, or `storage` not writable. Details in `backend/storage/logs/`. |
 | Everyone gets "Too many failed attempts" together | `TRUSTED_PROXIES` doesn't include the server's IP (see Part C step 4). |
+| Composer says "your php version (8.2.x) does not satisfy that requirement" | Terminal is using the server's default PHP, not 8.3. Set the alias from A2, or run `/opt/cpanel/ea-php83/root/usr/bin/php "$(command -v composer)" install --no-dev --optimize-autoloader`. |
+| Composer on the server: "Could not fetch https://api.github.com/… Your account was suspended … provide a GitHub access token" | GitHub refuses package downloads from the server's shared IP. Press Ctrl+C at the token prompt. Build `vendor/` on your computer and upload it (A4). `deploy.sh` only runs a full `composer install` when `backend/composer.lock` changes. If you need Composer on the server, create a **fine-grained token with no repository access** (public, read-only), set to expire soon, and run `php "$(command -v composer)" config -g github-oauth.github.com <token>`. The token is stored in plain text in `~/.config/composer/auth.json`. |
 | Old system-log entries never disappear | The cron job (A9) isn't running, or its PHP path is wrong. |
 | No Telegram messages | Run `bash deploy/watchdog.sh --test` and read `~/fitcheck-deploy-state/watchdog.log`. Usual causes: wrong chat id (it must start with `-100`), the bot isn't in the group or can't post, or a wrong thread id. |
 | Deploys never start | `deploy.sh` needs `git fetch` to work from cron. Run `cd ~/fitcheck-src && git fetch` by hand to check the deploy key. Also check `COMPOSER_BIN` and `PHP_BIN` are full paths. |
