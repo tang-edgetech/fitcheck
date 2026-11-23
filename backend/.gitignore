@@ -25,3 +25,7 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Added on the server by AutoSSL (public/ is the API's document root)
+/public/.well-known
+/public/cgi-bin

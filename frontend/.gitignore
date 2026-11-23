@@ -43,3 +43,10 @@ next-env.d.ts
 # cPanel package (npm run build:cpanel)
 /dist-cpanel
 /fitcheck-frontend.zip
+
+# Added on the server by cPanel (Setup Node.js App, AutoSSL); frontend/ is the domain's document root
+/.htaccess
+/.well-known
+/cgi-bin
+/tmp
+/stderr.log

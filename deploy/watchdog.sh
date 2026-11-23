@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Fitcheck watchdog: checks the live site and posts to a Telegram group topic when something breaks
 # or recovers. Meant for cron, e.g.:
-#   */5 * * * * /bin/bash /home/CPUSER/fitcheck-src/deploy/watchdog.sh >/dev/null 2>&1
-#   0 9 * * *   /bin/bash /home/CPUSER/fitcheck-src/deploy/watchdog.sh --report >/dev/null 2>&1
+#   */5 * * * * /bin/bash /home/cpadmin99/public_html/fitcheck.smartsitecp.com/deploy/watchdog.sh >/dev/null 2>&1
+#   0 9 * * *   /bin/bash /home/cpadmin99/public_html/fitcheck.smartsitecp.com/deploy/watchdog.sh --report >/dev/null 2>&1
 #
 # Checks: tester page, admin sign-in page, API through the site, API health (/up), HTTPS certificate
 # expiry for both addresses, disk usage, and new errors in the Laravel log.

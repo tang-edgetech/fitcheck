@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Fitcheck auto-deploy for cPanel. Meant for cron, e.g. every 5 minutes:
-#   */5 * * * * /bin/bash /home/CPUSER/fitcheck-src/deploy/deploy.sh >/dev/null 2>&1
+#   */5 * * * * /bin/bash /home/cpadmin99/public_html/fitcheck.smartsitecp.com/deploy/deploy.sh >/dev/null 2>&1
 #
 # Each run checks GitHub for new commits on GIT_BRANCH. If there are none it exits quietly.
 # Otherwise it updates the clone, then only the parts that changed:
@@ -49,7 +49,16 @@ MAINTENANCE=0
 STARTED=$(date +%s)
 
 cd "$SRC_DIR"
+# Never wait for a password from cron: fail instead (set up the deploy key, see the guide)
+export GIT_TERMINAL_PROMPT=0
 git fetch --quiet origin "$GIT_BRANCH"
+
+# Your layout: the apps run inside the git copy itself (like C:\xampp\htdocs\fitcheck on a PC):
+#   API_DIR = SRC_DIR/backend   and   WEB_DIR = SRC_DIR/frontend/dist-cpanel   → nothing to copy
+# Otherwise the folders are separate and get synced.
+same_path() { [[ "$(realpath -m "$1")" == "$(realpath -m "$2")" ]]; }
+API_IN_PLACE=0; same_path "$API_DIR" "$SRC_DIR/backend" && API_IN_PLACE=1
+WEB_IN_PLACE=0; same_path "$WEB_DIR" "$SRC_DIR/frontend/dist-cpanel" && WEB_IN_PLACE=1
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse "origin/$GIT_BRANCH")
 
@@ -80,9 +89,11 @@ if [[ "${DEPLOY_SITE:-1}" == 0 && $DO_SITE -eq 1 ]]; then
 fi
 
 log "Commits:"; log "$COMMITS"
-log "Deploy API: $DO_API   Deploy site: $DO_SITE"
+log "Deploy API: $DO_API   Deploy site: $DO_SITE   (API in place: $API_IN_PLACE, site in place: $WEB_IN_PLACE)"
 if [[ $DRY -eq 1 ]]; then log "Dry run: nothing changed."; exit 0; fi
-command -v rsync >/dev/null || { log "deploy.sh needs rsync"; exit 1; }
+if { [[ $DO_API -eq 1 && $API_IN_PLACE -eq 0 ]] || [[ $DO_SITE -eq 1 && $WEB_IN_PLACE -eq 0 ]]; }; then
+  command -v rsync >/dev/null || { log "deploy.sh needs rsync to copy into separate app folders"; exit 1; }
+fi
 
 SHORT=$(git rev-parse --short "$REMOTE")
 parts=(); [[ $DO_API -eq 1 ]] && parts+=("API"); [[ $DO_SITE -eq 1 ]] && parts+=("site")
@@ -110,15 +121,22 @@ step "Update source to origin/$GIT_BRANCH"
 git reset --hard --quiet "origin/$GIT_BRANCH"
 
 if [[ $DO_API -eq 1 ]]; then
-  step "Sync API files"
-  # Keeps the server's .env, storage (logs, sessions), vendor and the public .htaccess (it may hold an IP allow-list)
-  rsync -a --delete \
-    --exclude '.env' --exclude 'storage/' --exclude 'vendor/' --exclude 'bootstrap/cache/*.php' \
-    --exclude 'public/.htaccess' --exclude 'node_modules/' --exclude '.well-known/' --exclude 'cgi-bin/' \
-    "$SRC_DIR/backend/" "$API_DIR/"
-  # storage/ is excluded above so logs and sessions survive; this only adds folders/files that are missing
-  # (e.g. on a fresh server), never overwriting what's there
-  rsync -a --ignore-existing "$SRC_DIR/backend/storage/" "$API_DIR/storage/"
+  if [[ $API_IN_PLACE -eq 1 ]]; then
+    # The API runs straight from the git copy (backend/ inside SRC_DIR): git already updated the files.
+    # .env, vendor/ and storage/ are git-ignored, so the reset above left them alone.
+    step "API files updated in place"
+    (cd "$API_DIR" && mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache)
+  else
+    step "Sync API files"
+    # Keeps the server's .env, storage (logs, sessions), vendor and the public .htaccess (it may hold an IP allow-list)
+    rsync -a --delete \
+      --exclude '.env' --exclude 'storage/' --exclude 'vendor/' --exclude 'bootstrap/cache/*.php' \
+      --exclude 'public/.htaccess' --exclude 'node_modules/' --exclude '.well-known/' --exclude 'cgi-bin/' \
+      "$SRC_DIR/backend/" "$API_DIR/"
+    # storage/ is excluded above so logs and sessions survive; this only adds folders/files that are missing
+    # (e.g. on a fresh server), never overwriting what's there
+    rsync -a --ignore-existing "$SRC_DIR/backend/storage/" "$API_DIR/storage/"
+  fi
 
   # Only when the PHP packages changed (or vendor/ is missing): downloading packages on shared hosting can be
   # blocked by GitHub. Otherwise the uploaded vendor/ stays as it is and only the class map is refreshed.
@@ -150,13 +168,18 @@ if [[ $DO_SITE -eq 1 ]]; then
     [[ -n "${NODE_ACTIVATE:-}" && -f "$NODE_ACTIVATE" ]] && source "$NODE_ACTIVATE"
     cd "$SRC_DIR/frontend"
     npm ci --no-audit --no-fund --loglevel=error
-    BACKEND_URL="$API_URL" npm run build:cpanel
+    # Builds into frontend/dist-cpanel/, keeping the .htaccess, tmp/ and .well-known/ cPanel put there
+    NO_ZIP=1 BACKEND_URL="$API_URL" npm run build:cpanel
   )
 
-  step "Install site files"
-  # Keeps Passenger's tmp/ and log, the .htaccess cPanel writes for the app (plus your own lines), and AutoSSL's .well-known/
-  rsync -a --delete --exclude 'tmp/' --exclude 'stderr.log' --exclude '.htaccess' --exclude '.well-known/' --exclude 'cgi-bin/' \
-    "$SRC_DIR/frontend/dist-cpanel/" "$WEB_DIR/"
+  if [[ $WEB_IN_PLACE -eq 1 ]]; then
+    step "Site built in place (frontend/dist-cpanel is the app root)"
+  else
+    step "Install site files"
+    # Keeps Passenger's tmp/ and log, the .htaccess cPanel writes for the app (plus your own lines), and AutoSSL's .well-known/
+    rsync -a --delete --exclude 'tmp/' --exclude 'stderr.log' --exclude '.htaccess' --exclude '.well-known/' --exclude 'cgi-bin/' \
+      "$SRC_DIR/frontend/dist-cpanel/" "$WEB_DIR/"
+  fi
 
   step "Restart site"
   mkdir -p "$WEB_DIR/tmp" && touch "$WEB_DIR/tmp/restart.txt"
