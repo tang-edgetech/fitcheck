@@ -92,7 +92,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
           </Dropdown>
         </Layout.Header>
         <Layout.Content className="p-6 max-md:p-4">
-          <div className="mx-auto max-w-[1360px]">{children}</div>
+          <div className="admin-content w-full">{children}</div>
         </Layout.Content>
         <Layout.Footer className="bg-transparent pt-0 text-center text-[12px] text-[#8a96a5]">
           Signed in as {me.username} · sessions end after {me.session_timeout_minutes} minutes without activity {me.two_factor_enforced && <Tag className="ml-2" color="blue">2FA required</Tag>}
