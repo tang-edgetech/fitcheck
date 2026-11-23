@@ -14,7 +14,31 @@ Browser ──► fitcheck.smartsitecp.com (Next.js)
 
 Browsers only ever talk to `fitcheck.smartsitecp.com`. Next.js forwards API calls to Laravel behind the scenes, so sign-in cookies stay on one site and no cross-site setup is needed.
 
-Do Part A (the API) first, then Part B (the site). Part C covers the admin panel's first sign-in.
+## Which folder goes where
+
+The repository has two app folders. Each one ends up in its own folder in your cPanel home directory:
+
+| In the repository | What it is | On the server | Serves |
+|---|---|---|---|
+| `backend/` | Laravel API (PHP) | `/home/CPUSER/fitcheck-backend/`: the **contents** of `backend/`, uploaded as they are | `fitcheck-api.smartsitecp.com` (document root `fitcheck-backend/public`) |
+| `frontend/` | Next.js site: tester and `/admin` | `/home/CPUSER/fitcheck-frontend/`: **not** the `frontend/` folder itself, but the package built from it (`frontend/fitcheck-frontend.zip`) | `fitcheck.smartsitecp.com` (Setup Node.js App) |
+| `docs/`, `deploy/` | Guides and scripts | Not uploaded. `deploy/` is used from a git copy of the repository in Part D. | — |
+
+After setup, the server looks like this:
+
+```
+/home/CPUSER/
+├── fitcheck-backend/          ← contents of the repo's backend/
+│   ├── app/  bootstrap/  config/  database/  routes/  storage/  vendor/  artisan …
+│   ├── .env                   ← created on the server (A6), never uploaded
+│   └── public/                ← web root of fitcheck-api.smartsitecp.com
+├── fitcheck-frontend/         ← contents of fitcheck-frontend.zip (built from frontend/)
+│   ├── server.js              ← Setup Node.js App startup file
+│   ├── .next/  node_modules/  public/  package.json
+└── fitcheck-src/              ← only with Part D: a git clone of the whole repository
+```
+
+**First setup:** do Part A (`backend/` → API), then Part B (`frontend/` → site), then Part C (first sign-in to `/admin`). **Optional:** Part D makes later updates automatic when you push to GitHub, and adds Telegram alerts.
 
 ## Before you start
 
@@ -30,13 +54,13 @@ In the steps below, replace `CPUSER` with your cPanel username (shown top right 
 
 ---
 
-## Part A — `fitcheck-api.smartsitecp.com` (Laravel API)
+## Part A — `fitcheck-api.smartsitecp.com` (Laravel API, from the repo's `backend/`)
 
 ### A1. Create the subdomain
 1. cPanel → **Domains** → **Create A New Domain**.
 2. Domain: `fitcheck-api.smartsitecp.com`.
-3. Untick **Share document root**. Set the document root to **`fitcheck-api/public`**.
-4. Submit. The app files will go in `/home/CPUSER/fitcheck-api`, and only its `public` folder is visible on the web.
+3. Untick **Share document root**. Set the document root to **`fitcheck-backend/public`**.
+4. Submit. The app files will go in `/home/CPUSER/fitcheck-backend`, and only its `public` folder is visible on the web.
 
 ### A2. PHP version and extensions
 1. cPanel → **MultiPHP Manager** → tick `fitcheck-api.smartsitecp.com` → PHP **8.3** (or newer) → Apply.
@@ -55,7 +79,15 @@ cd backend
 composer install --no-dev --optimize-autoloader
 ```
 
-Zip the **contents** of the `backend` folder (`app`, `bootstrap`, `config`, `database`, `public`, `resources`, `routes`, `storage`, `vendor`, `artisan`, `composer.json`, `composer.lock`, `.env.production.example`). **Leave out `.env`**, because it holds your local settings.
+Then zip everything **inside** `backend/`, so that `app/`, `public/`, `artisan` and so on sit at the top level of the zip, not inside a `backend/` folder:
+
+```powershell
+# still inside backend/. Uses Windows' own tar, which works even while files are in use.
+# Leaves out your local .env, logs and caches.
+& C:\Windows\System32\tar.exe -a -c -f ..\fitcheck-backend.zip --exclude ./.env --exclude ./node_modules --exclude './storage/logs/*.log' --exclude './storage/framework/sessions/*' --exclude './storage/framework/views/*.php' --exclude './storage/framework/cache/data/*' --exclude './bootstrap/cache/*.php' .
+```
+
+This creates `fitcheck-backend.zip` next to the `backend/` folder (about 15–20 MB). It includes `vendor/` and `.env.production.example`, and **not** your local `.env`.
 
 Afterwards, restore the development packages locally:
 
@@ -66,9 +98,9 @@ composer install
 > If cPanel Terminal has `composer`, you can upload without `vendor` and run `composer install --no-dev --optimize-autoloader` on the server instead.
 
 ### A5. Upload
-1. cPanel → **File Manager** → open `/home/CPUSER/fitcheck-api` (created in A1).
-2. **Upload** the zip, then right-click → **Extract**. Delete the zip afterwards.
-3. Check that `/home/CPUSER/fitcheck-api/public/index.php` exists.
+1. cPanel → **File Manager** → open `/home/CPUSER/fitcheck-backend` (created in A1).
+2. **Upload** `fitcheck-backend.zip`, then right-click → **Extract** (into this same folder). Delete the zip afterwards.
+3. Check that `app/`, `public/`, `vendor/` and `artisan` are directly inside `fitcheck-backend`, and that `/home/CPUSER/fitcheck-backend/public/index.php` exists. If they landed in a `fitcheck-backend/backend/` subfolder, the zip was made from the folder instead of its contents: move them up one level.
 
 ### A6. Settings (`.env`)
 1. In File Manager, turn on **Settings → Show Hidden Files**.
@@ -82,8 +114,9 @@ composer install
 cPanel → **Terminal**:
 
 ```bash
-cd ~/fitcheck-api
+cd ~/fitcheck-backend
 php -v                                  # must say 8.3 or newer; if not, use the full path shown in A9
+mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache/data storage/logs bootstrap/cache
 php artisan key:generate --force
 php artisan migrate --force
 php artisan db:seed --force             # creates dev-admin, dev-admin-1, super-admin, the devices and menu groups
@@ -101,7 +134,7 @@ cPanel → **SSL/TLS Status** → tick both subdomains → **Run AutoSSL**. Wait
 cPanel → **Cron Jobs** → Common settings: **Once Per Minute**. Command:
 
 ```bash
-cd /home/CPUSER/fitcheck-api && /opt/cpanel/ea-php83/root/usr/bin/php artisan schedule:run >> /dev/null 2>&1
+cd /home/CPUSER/fitcheck-backend && /opt/cpanel/ea-php83/root/usr/bin/php artisan schedule:run >> /dev/null 2>&1
 ```
 
 Use the PHP path for your version: run `ls /opt/cpanel/` in Terminal to see `ea-php83`, `ea-php84` and so on. Some hosts use `/usr/local/bin/php` instead. The job deletes old system-log entries daily (Settings → Log).
@@ -112,7 +145,9 @@ Use the PHP path for your version: run `ls /opt/cpanel/` in Terminal to see `ea-
 
 ---
 
-## Part B — `fitcheck.smartsitecp.com` (site and admin panel)
+## Part B — `fitcheck.smartsitecp.com` (site and admin panel, built from the repo's `frontend/`)
+
+Don't upload the `frontend/` folder itself (its source code can't run as is). You build it into one zip on your computer (B2) and upload only that.
 
 ### B1. Create the subdomain
 cPanel → **Domains** → **Create A New Domain** → `fitcheck.smartsitecp.com`. Keep the suggested document root. The Node.js app takes over this address in B3.
@@ -144,7 +179,7 @@ Under **Environment variables**, add `NODE_ENV` = `production` and `HOSTNAME` = 
 1. In Setup Node.js App, select **Stop App**.
 2. File Manager → `/home/CPUSER/fitcheck-frontend` → delete any sample files cPanel created (such as `app.js`).
 3. **Upload** `fitcheck-frontend.zip` → right-click → **Extract** → delete the zip.
-4. With hidden files shown, check that `server.js`, `.next/` and `public/` are directly inside `fitcheck-frontend`, not in a subfolder.
+4. With hidden files shown, check that `server.js`, `.next/`, `node_modules/` and `public/` are directly inside `fitcheck-frontend`, not in a subfolder. There should be **no** `src/` folder; that would mean the source `frontend/` folder was uploaded instead of the zip.
 5. Back in Setup Node.js App, select **Start App** (or **Restart**).
 
 **Don't** select "Run NPM Install". The package already contains everything it needs.
@@ -167,7 +202,7 @@ Under **Environment variables**, add `NODE_ENV` = `production` and `HOSTNAME` = 
 7. Remove the `DEFAULT_ADMIN_PASSWORD` line from the server's `.env`, then run `php artisan config:cache`.
 
 ### Optional: hide the API from the public
-Only the Next.js app needs to reach `fitcheck-api`. To block everyone else, add this at the very top of `/home/CPUSER/fitcheck-api/public/.htaccess`, then check that the site still loads devices:
+Only the Next.js app needs to reach `fitcheck-api.smartsitecp.com`. To block everyone else, add this at the very top of `/home/CPUSER/fitcheck-backend/public/.htaccess`, then check that the site still loads devices:
 
 ```apache
 <RequireAny>
@@ -181,6 +216,14 @@ Only the Next.js app needs to reach `fitcheck-api`. To block everyone else, add 
 ## Part D — Automatic deploys and Telegram alerts
 
 Two scripts in `deploy/`, both run from cron. Both post to a **Telegram group topic** (a forum thread).
+
+Do this **after** Parts A–C, so the two app folders, the database and `.env` already exist. From then on, `deploy.sh` keeps them up to date from a git clone of the whole repository (`~/fitcheck-src`):
+
+```
+~/fitcheck-src/backend/   ──copied to──►            ~/fitcheck-backend/    (keeps the server's .env, storage/, vendor/)
+~/fitcheck-src/frontend/  ──built, then copied to──► ~/fitcheck-frontend/   (same package as B2)
+~/fitcheck-src/deploy/    ──the scripts themselves run from here; never copied
+```
 
 | Script | Schedule | What it does |
 |---|---|---|
@@ -276,7 +319,7 @@ With Part D set up, pushing to `main` deploys automatically. Without it, or with
 **API changes:** upload the changed files (or a new zip, without `.env`). Then:
 
 ```bash
-cd ~/fitcheck-api
+cd ~/fitcheck-backend
 php artisan migrate --force
 php artisan config:cache
 php artisan route:cache
@@ -293,7 +336,7 @@ php artisan route:cache
 | Site shows a Passenger / "Incomplete response" error | Node.js is older than 20.9, or `.next` wasn't extracted (check hidden files). See `stderr.log` in `fitcheck-frontend`. |
 | Tester says "Could not load the device list" | The package was built with the wrong `BACKEND_URL`, or the API is down or has no HTTPS yet. Open the A10 links. |
 | Sign-in fails with "page expired" (419) or loops back to the sign-in page | `SANCTUM_STATEFUL_DOMAINS` must be exactly `fitcheck.smartsitecp.com`. The site must be on HTTPS. Run `php artisan config:cache` after any `.env` edit. |
-| API returns 500 | `APP_KEY` missing (run A7 again), wrong database details, or `storage` not writable. Details in `~/fitcheck-api/storage/logs/`. |
+| API returns 500 | `APP_KEY` missing (run A7 again), wrong database details, or `storage` not writable. Details in `~/fitcheck-backend/storage/logs/`. |
 | Everyone gets "Too many failed attempts" together | `TRUSTED_PROXIES` doesn't include the server's IP (see Part C step 4). |
 | Old system-log entries never disappear | The cron job (A9) isn't running, or its PHP path is wrong. |
 | No Telegram messages | Run `bash deploy/watchdog.sh --test` and read `~/fitcheck-deploy-state/watchdog.log`. Usual causes: wrong chat id (it must start with `-100`), the bot isn't in the group or can't post, or a wrong thread id. |

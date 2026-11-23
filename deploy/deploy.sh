@@ -116,6 +116,9 @@ if [[ $DO_API -eq 1 ]]; then
     --exclude '.env' --exclude 'storage/' --exclude 'vendor/' --exclude 'bootstrap/cache/*.php' \
     --exclude 'public/.htaccess' --exclude 'node_modules/' \
     "$SRC_DIR/backend/" "$API_DIR/"
+  # storage/ is excluded above so logs and sessions survive; this only adds folders/files that are missing
+  # (e.g. on a fresh server), never overwriting what's there
+  rsync -a --ignore-existing "$SRC_DIR/backend/storage/" "$API_DIR/storage/"
 
   step "Composer install"
   (cd "$API_DIR" && $COMPOSER_BIN install --no-dev --optimize-autoloader --no-interaction --no-progress)
