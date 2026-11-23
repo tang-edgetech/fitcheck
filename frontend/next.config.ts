@@ -22,6 +22,10 @@ const nextConfig: NextConfig = {
       },
     },
   },
+  async redirects() {
+    // Settings has one route per tab; the bare URL opens the first tab
+    return [{ source: "/admin/settings", destination: "/admin/settings/general", permanent: false }];
+  },
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` },

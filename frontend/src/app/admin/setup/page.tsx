@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { App, Button, Card, Form, Input, Spin, Steps } from "antd";
 import { api, ApiError } from "@/lib/api";
 import { pendingSetup, useAdmin } from "@/components/admin/AdminProvider";
+import HelpButton from "@/components/admin/HelpButton";
 import Brand from "@/components/admin/Brand";
 import PasswordFields from "@/components/admin/PasswordFields";
 import TwoFactorSetup from "@/components/admin/TwoFactorSetup";
@@ -27,7 +28,7 @@ export default function SetupPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (!me) return <div className="grid min-h-dvh place-items-center"><Spin /></div>;
+  if (!me) return <div className="page-loading grid min-h-dvh place-items-center"><Spin /></div>;
 
   const steps = [
     me.must_change_password && "password",
@@ -57,43 +58,43 @@ export default function SetupPage() {
   }
 
   return (
-    <main className="mx-auto grid max-w-[640px] gap-6 px-4 py-10">
-      <div className="flex items-center justify-between">
+    <main className="page page-setup mx-auto grid max-w-[640px] gap-6 px-4 py-10">
+      <div className="setup-header flex items-center justify-between">
         <Brand />
-        <Button type="link" onClick={async () => { await logout(); router.replace("/admin/login"); }}>Sign out</Button>
+        <Button className="setup-header-btn setup-header-btn--sign-out" type="link" onClick={async () => { await logout(); router.replace("/admin/login"); }}>Sign out</Button>
       </div>
-      <div>
-        <h1 className="m-0 text-2xl font-semibold">Finish setting up your account</h1>
-        <p className="mb-0 mt-1 text-[#5c6978]">Signed in as <b>{me.username}</b>. These steps are required before you can use the admin panel.</p>
+      <div className="setup-intro">
+        <div className="setup-intro-heading flex items-center gap-1.5"><h1 className="setup-intro-title m-0 text-2xl font-semibold">Finish setting up your account</h1><HelpButton /></div>
+        <p className="setup-intro-text mb-0 mt-1 text-[#5c6978]">Signed in as <b>{me.username}</b>. These steps are required before you can use the admin panel.</p>
       </div>
-      <Steps current={all.indexOf(current)} items={all.map((s) => ({ title: labels[s], status: steps.includes(s) ? (s === current ? "process" : "wait") : "finish" }))} />
-      <Card title={labels[current]}>
+      <Steps className="setup-steps" current={all.indexOf(current)} items={all.map((s) => ({ title: labels[s], status: steps.includes(s) ? (s === current ? "process" : "wait") : "finish" }))} />
+      <Card className="setup-card" title={labels[current]}>
         {current === "password" && (
-          <Form form={pwForm} layout="vertical" onFinish={savePassword} requiredMark={false} disabled={busy}>
-            <p className="mt-0 text-[#5c6978]">Your account still uses the default password. Choose your own.</p>
-            <Form.Item name="current_password" label="Current password" rules={[{ required: true, message: "Enter the password you signed in with" }]}>
-              <Input.Password autoComplete="current-password" />
+          <Form className="setup-step-panel setup-step-panel--password form form--password" form={pwForm} layout="vertical" onFinish={savePassword} requiredMark={false} disabled={busy}>
+            <p className="form-help mt-0 text-[#5c6978]">Your account still uses the default password. Choose your own.</p>
+            <Form.Item className="form-field form-field--current-password" name="current_password" label="Current password" rules={[{ required: true, message: "Enter the password you signed in with" }]}>
+              <Input.Password className="form-input form-input--current-password" autoComplete="current-password" />
             </Form.Item>
             <PasswordFields min={me.password_min_length} />
-            <Button type="primary" htmlType="submit" loading={busy}>Save password</Button>
+            <Button className="form-btn form-btn--save-password" type="primary" htmlType="submit" loading={busy}>Save password</Button>
           </Form>
         )}
         {current === "profile" && (
-          <Form form={profileForm} layout="vertical" onFinish={saveProfile} requiredMark={false} disabled={busy} initialValues={{ display_name: me.display_name ?? "", email: me.email ?? "" }}>
-            <Form.Item name="display_name" label="Display name" extra="Shown in the admin panel and the audit log." rules={[{ required: true, message: "Enter a display name" }, { max: 100 }]}>
-              <Input autoComplete="name" />
+          <Form className="setup-step-panel setup-step-panel--profile form form--profile" form={profileForm} layout="vertical" onFinish={saveProfile} requiredMark={false} disabled={busy} initialValues={{ display_name: me.display_name ?? "", email: me.email ?? "" }}>
+            <Form.Item className="form-field form-field--display-name" name="display_name" label="Display name" extra="Shown in the admin panel and the audit log." rules={[{ required: true, message: "Enter a display name" }, { max: 100 }]}>
+              <Input className="form-input form-input--display-name" autoComplete="name" />
             </Form.Item>
-            <Form.Item name="email" label="Email address" extra="You can sign in with this or your username." rules={[{ required: true, message: "Enter your email address" }, { type: "email", message: "Enter a valid email address" }]}>
-              <Input autoComplete="email" inputMode="email" />
+            <Form.Item className="form-field form-field--email" name="email" label="Email address" extra="You can sign in with this or your username." rules={[{ required: true, message: "Enter your email address" }, { type: "email", message: "Enter a valid email address" }]}>
+              <Input className="form-input form-input--email" autoComplete="email" inputMode="email" />
             </Form.Item>
-            <Button type="primary" htmlType="submit" loading={busy}>Save details</Button>
+            <Button className="form-btn form-btn--save-details" type="primary" htmlType="submit" loading={busy}>Save details</Button>
           </Form>
         )}
         {current === "two_factor" && (
-          <>
-            <p className="mt-0 text-[#5c6978]">Your administrator requires two-factor sign-in for every account.</p>
+          <div className="setup-step-panel setup-step-panel--two-factor">
+            <p className="setup-step-help mt-0 text-[#5c6978]">Your administrator requires two-factor sign-in for every account.</p>
             <TwoFactorSetup onDone={advance} />
-          </>
+          </div>
         )}
       </Card>
     </main>

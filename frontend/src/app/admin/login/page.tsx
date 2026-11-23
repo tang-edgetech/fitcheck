@@ -54,51 +54,51 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-dvh place-items-center p-4">
-      <div className="w-full max-w-[400px]">
-        <div className="mb-6 flex justify-center"><Brand /></div>
-        <Card>
+    <main className="page page-login grid min-h-dvh place-items-center p-4">
+      <div className="login-container w-full max-w-[400px]">
+        <div className="login-brand mb-6 flex justify-center"><Brand /></div>
+        <Card className="login-card">
           {step === "password" ? (
             <>
-              <h1 className="mb-1 mt-0 text-xl font-semibold">Sign in</h1>
-              <p className="mb-5 mt-0 text-[#5c6978]">Use your username or email address.</p>
-              {notice && <Alert className="mb-4" type="info" showIcon title={notice} />}
-              {error && <Alert className="mb-4" type="error" showIcon title={error} />}
-              <Form layout="vertical" onFinish={submitPassword} requiredMark={false} disabled={busy}>
-                <Form.Item name="login" label="Username or email" rules={[{ required: true, message: "Enter your username or email" }]}>
-                  <Input size="large" prefix={<UserOutlined />} autoComplete="username" autoFocus />
+              <h1 className="login-title mb-1 mt-0 text-xl font-semibold">Sign in</h1>
+              <p className="login-help mb-5 mt-0 text-[#5c6978]">Use your username or email address.</p>
+              {notice && <Alert className="login-alert login-alert--notice mb-4" type="info" showIcon title={notice} />}
+              {error && <Alert className="login-alert login-alert--error mb-4" type="error" showIcon title={error} />}
+              <Form className="form form--login" layout="vertical" onFinish={submitPassword} requiredMark={false} disabled={busy}>
+                <Form.Item className="form-field form-field--login" name="login" label="Username or email" rules={[{ required: true, message: "Enter your username or email" }]}>
+                  <Input className="form-input form-input--login" size="large" prefix={<UserOutlined />} autoComplete="username" autoFocus />
                 </Form.Item>
-                <Form.Item name="password" label="Password" rules={[{ required: true, message: "Enter your password" }]}>
-                  <Input.Password size="large" prefix={<LockOutlined />} autoComplete="current-password" />
+                <Form.Item className="form-field form-field--password" name="password" label="Password" rules={[{ required: true, message: "Enter your password" }]}>
+                  <Input.Password className="form-input form-input--password" size="large" prefix={<LockOutlined />} autoComplete="current-password" />
                 </Form.Item>
-                <Button type="primary" htmlType="submit" size="large" block loading={busy}>Sign in</Button>
+                <Button className="form-btn form-btn--sign-in" type="primary" htmlType="submit" size="large" block loading={busy}>Sign in</Button>
               </Form>
             </>
           ) : (
             <>
-              <h1 className="mb-1 mt-0 text-xl font-semibold">Two-factor sign-in</h1>
-              <p className="mb-5 mt-0 text-[#5c6978]">{useRecovery ? "Enter one of the recovery codes you saved when you set up two-factor sign-in. Each code works once." : "Open your authenticator app and enter the 6-digit code for Fitcheck."}</p>
-              {error && <Alert className="mb-4" type="error" showIcon title={error} />}
-              <Form layout="vertical" onFinish={submitCode} requiredMark={false} disabled={busy} key={String(useRecovery)}>
+              <h1 className="login-title login-title--two-factor mb-1 mt-0 text-xl font-semibold">Two-factor sign-in</h1>
+              <p className="login-help login-help--two-factor mb-5 mt-0 text-[#5c6978]">{useRecovery ? "Enter one of the recovery codes you saved when you set up two-factor sign-in. Each code works once." : "Open your authenticator app and enter the 6-digit code for Fitcheck."}</p>
+              {error && <Alert className="login-alert login-alert--error mb-4" type="error" showIcon title={error} />}
+              <Form className="form form--two-factor" layout="vertical" onFinish={submitCode} requiredMark={false} disabled={busy} key={String(useRecovery)}>
                 {useRecovery ? (
-                  <Form.Item name="recovery_code" label="Recovery code" rules={[{ required: true, message: "Enter a recovery code" }]}>
-                    <Input size="large" placeholder="ABCDE-12345" autoComplete="one-time-code" autoFocus />
+                  <Form.Item className="form-field form-field--recovery-code" name="recovery_code" label="Recovery code" rules={[{ required: true, message: "Enter a recovery code" }]}>
+                    <Input className="form-input form-input--recovery-code" size="large" placeholder="ABCDE-12345" autoComplete="one-time-code" autoFocus />
                   </Form.Item>
                 ) : (
-                  <Form.Item name="code" label="6-digit code" rules={[{ required: true, pattern: /^\s*\d{3}\s?\d{3}\s*$/, message: "Enter the 6 digits from your app" }]}>
-                    <Input size="large" prefix={<SafetyOutlined />} inputMode="numeric" autoComplete="one-time-code" maxLength={7} autoFocus />
+                  <Form.Item className="form-field form-field--code" name="code" label="6-digit code" rules={[{ required: true, pattern: /^\s*\d{3}\s?\d{3}\s*$/, message: "Enter the 6 digits from your app" }]}>
+                    <Input className="form-input form-input--code" size="large" prefix={<SafetyOutlined />} inputMode="numeric" autoComplete="one-time-code" maxLength={7} autoFocus />
                   </Form.Item>
                 )}
-                <Button type="primary" htmlType="submit" size="large" block loading={busy}>Verify</Button>
+                <Button className="form-btn form-btn--verify" type="primary" htmlType="submit" size="large" block loading={busy}>Verify</Button>
               </Form>
-              <div className="mt-4 flex justify-between">
-                <Button type="link" className="px-0" onClick={() => { setUseRecovery((x) => !x); setError(""); }}>{useRecovery ? "Use authenticator code" : "Use a recovery code"}</Button>
-                <Button type="link" className="px-0" onClick={() => { setStep("password"); setError(""); }}>Back</Button>
+              <div className="login-links mt-4 flex justify-between">
+                <Button type="link" className="login-link login-link--toggle-recovery px-0" onClick={() => { setUseRecovery((x) => !x); setError(""); }}>{useRecovery ? "Use authenticator code" : "Use a recovery code"}</Button>
+                <Button type="link" className="login-link login-link--back px-0" onClick={() => { setStep("password"); setError(""); }}>Back</Button>
               </div>
             </>
           )}
         </Card>
-        <p className="mt-6 text-center text-[13px] text-[#5c6978]"><Link href="/" className="text-[#5c6978]">← Back to the tester</Link></p>
+        <p className="login-footer mt-6 text-center text-[13px] text-[#5c6978]"><Link href="/" className="login-footer-link text-[#5c6978]">← Back to the tester</Link></p>
       </div>
     </main>
   );

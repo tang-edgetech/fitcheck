@@ -78,7 +78,7 @@ export default function AdminRoot({ children }: { children: ReactNode }) {
     <ConfigProvider theme={adminTheme}>
       <App>
         <AdminCtx.Provider value={value}>
-          <div className="min-h-dvh bg-[#f3f5f8] font-[family-name:var(--font-inter)] text-[#17202b]">{children}</div>
+          <div className="admin-root min-h-dvh bg-[#f3f5f8] font-[family-name:var(--font-inter)] text-[#17202b]">{children}</div>
         </AdminCtx.Provider>
       </App>
     </ConfigProvider>

@@ -82,3 +82,14 @@ body { margin: 0; }
 .fc-stand { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: 28%; height: calc(30px * var(--k)); background: linear-gradient(var(--fc-edge), var(--fc-frame)); clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); }
 .fc-tv .fc-stand { display: block; }
 @media (prefers-reduced-motion: reduce) { .fc-load { transition: none; } }
+
+/* ---------- Admin: drag-and-drop ordering (useDragSort) ---------- */
+.sortable-handle { display: inline-grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: transparent; color: #8a96a5; cursor: grab; touch-action: none; }
+.sortable-handle:hover { background: #eef1f5; color: #17202b; }
+.sortable-handle:focus-visible { outline: 2px solid #2f5bea; outline-offset: 1px; }
+.sortable-handle:active { cursor: grabbing; }
+.sortable-item.is-dragging { opacity: .45; }
+.sortable-table .sortable-item.is-drop-before > td { box-shadow: inset 0 2px 0 #2f5bea; }
+.sortable-table .sortable-item.is-drop-after > td { box-shadow: inset 0 -2px 0 #2f5bea; }
+.sortable-list .sortable-item.is-drop-before { box-shadow: 0 -2px 0 #2f5bea; }
+.sortable-list .sortable-item.is-drop-after { box-shadow: 0 2px 0 #2f5bea; }

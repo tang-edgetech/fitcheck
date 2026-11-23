@@ -16,6 +16,9 @@ const CARD_H: Record<Card, number> = { s: 340, m: 480, l: 640 };
 const RECENT_KEY = "fitcheck-recent";
 const VIEW_KEY = "fitcheck-view";
 
+interface SiteInfo { name: string; default_view: View; default_size: SizeMode; banner: string | null; help_email: string | null }
+const DEFAULT_SITE: SiteInfo = { name: "Fitcheck", default_view: "scroll", default_size: "true", banner: null, help_email: null };
+
 function normalize(u: string) {
   u = u.trim();
   if (!u) return "";
@@ -41,6 +44,8 @@ export default function Tester() {
 function TesterInner() {
   const { message } = App.useApp();
   const [families, setFamilies] = useState<PublicFamily[] | null>(null);
+  /** Settings > General and Extra, from the public endpoint */
+  const [site, setSite] = useState<SiteInfo>(DEFAULT_SITE);
   const [loadError, setLoadError] = useState("");
   const [url, setUrl] = useState("");
   const [input, setInput] = useState("");
@@ -63,22 +68,31 @@ function TesterInner() {
   /* Read ?url=&group=&size=&view=&scrolling=&rotate= once on load */
   useEffect(() => {
     const q = new URLSearchParams(window.location.search);
-    let v = (q.get("view") as View) || "";
-    if (!v) { try { v = (localStorage.getItem(VIEW_KEY) as View) || "scroll"; } catch { v = "scroll"; } }
+    let v: View | "" = (q.get("view") as View) || "";
+    if (!v) { try { v = (localStorage.getItem(VIEW_KEY) as View) || ""; } catch { v = ""; } }
+    const askedSize = q.get("size");
     const u = normalize(q.get("url") || "");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from the address bar
-    setUrl(u); setInput(u); setGroup(q.get("group") || ""); setSize(q.get("size") === "fill" ? "fill" : "true");
+    setUrl(u); setInput(u); setGroup(q.get("group") || ""); setSize(askedSize === "fill" ? "fill" : "true");
     setView(v === "grid" ? "grid" : "scroll"); setCard((["s", "m", "l"].includes(q.get("card") ?? "") ? q.get("card") : "m") as Card); setScrolling(q.get("scrolling") !== "no"); setRot(q.get("rotate") === "yes");
     const o = (q.get("only") || "").split(",").filter(Boolean); setOnly(o.length ? o : null);
     setRecent(readRecent());
     fetch("/api/public/screen-views", { headers: { Accept: "application/json" }, cache: "no-cache" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: { families: PublicFamily[] }) => {
+      .then((d: { families: PublicFamily[]; site?: Partial<SiteInfo> }) => {
         if (!Array.isArray(d?.families)) throw new Error("bad shape");
+        const st = { ...DEFAULT_SITE, ...(d.site ?? {}) };
+        setSite(st);
+        // The visitor's link or saved choice wins; otherwise use the defaults from Settings > General
+        if (!v) setView(st.default_view === "grid" ? "grid" : "scroll");
+        if (!askedSize) setSize(st.default_size === "fill" ? "fill" : "true");
         setFamilies(d.families.filter((f) => Array.isArray(f.devices)));
       })
       .catch(() => setLoadError("Could not load the device list. Check that the Fitcheck API is running, then reload."));
   }, []);
+
+  // Set after the device list loads, so it lands after Next.js applies the page's static title
+  useEffect(() => { if (families) document.title = `${site.name} · Responsive tester`; }, [site.name, families]);
 
   /* Keep the address bar shareable */
   useEffect(() => {
@@ -87,13 +101,13 @@ function TesterInner() {
     if (url) q.set("url", url);
     if (group) q.set("group", group);
     if (only) q.set("only", only.join(","));
-    if (size === "fill") q.set("size", "fill");
-    if (view === "grid") q.set("view", "grid");
+    if (size !== site.default_size) q.set("size", size);
+    if (view !== site.default_view) q.set("view", view);
     if (view === "grid" && card !== "m") q.set("card", card);
     q.set("scrolling", scrolling ? "yes" : "no");
     if (rot) q.set("rotate", "yes");
     window.history.replaceState(null, "", window.location.pathname + "?" + q.toString());
-  }, [families, url, group, only, size, view, card, scrolling, rot]);
+  }, [families, site, url, group, only, size, view, card, scrolling, rot]);
 
   /* Measure the device area */
   useEffect(() => {
@@ -192,10 +206,12 @@ function TesterInner() {
   const fdim = fd ? dims(fd, rot) : null;
 
   return (
-    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_minmax(0,1fr)_auto] bg-cream font-sans text-ink`}>
+    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] ${site.banner ? "grid-rows-[auto_auto_auto_minmax(0,1fr)_auto]" : "grid-rows-[auto_auto_minmax(0,1fr)_auto]"} bg-cream font-sans text-ink`}>
       {/* Header */}
       <header className="site-header flex flex-wrap items-center gap-4 px-6 pb-2.5 pt-4 max-md:px-4">
-        <Link href="/" className="site-logo text-[22px] font-bold tracking-tight text-ink no-underline">fit<b className="text-coral">check</b></Link>
+        <Link href="/" className="site-logo text-[22px] font-bold tracking-tight text-ink no-underline">
+          {site.name.toLowerCase() === "fitcheck" ? <>fit<b className="text-coral">check</b></> : site.name}
+        </Link>
         <form className="url-form order-3 flex min-w-0 flex-1 basis-full gap-2 md:order-none md:max-w-[780px] md:basis-auto" onSubmit={(e) => { e.preventDefault(); submit(input); }}>
           <AutoComplete
             className="url-input min-w-0 flex-1"
@@ -209,6 +225,12 @@ function TesterInner() {
           <Button type="primary" size="large" htmlType="submit" className="url-submit font-bold">Show</Button>
         </form>
       </header>
+
+      {site.banner && (
+        <div role="status" className="site-banner mx-6 mb-1 rounded-xl border border-solid border-[#f5c3ae] bg-coral-soft px-4 py-2 text-[14px] text-ink max-md:mx-4">
+          <span className="site-banner-text">{site.banner}</span>
+        </div>
+      )}
 
       {/* Families + size + view */}
       <div className="toolbar flex flex-wrap items-center gap-3.5 px-6 pb-3 pt-1.5 max-md:px-4">
@@ -342,6 +364,7 @@ function TesterInner() {
           <li><b>Local addresses.</b> <code>localhost</code> links only work on the computer running that site.</li>
         </ul>
         <p className="text-muted">Sizes are CSS pixels: the width the phone&apos;s browser uses for media queries.</p>
+        {site.help_email && <p className="help-modal-contact">Still stuck? Email <a href={`mailto:${site.help_email}`}>{site.help_email}</a>.</p>}
       </Modal>
     </div>
   );

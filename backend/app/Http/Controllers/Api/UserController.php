@@ -50,6 +50,7 @@ class UserController extends Controller
     {
         $this->guardTarget($request, $user);
         $data = $request->validate([
+            'username' => ['sometimes', 'required', 'string', 'min:3', 'max:50', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
             'email' => ['nullable', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'display_name' => ['nullable', 'string', 'max:100'],
             'role' => ['sometimes', Rule::in(array_keys(config('fitcheck.roles')))],
@@ -58,16 +59,21 @@ class UserController extends Controller
         if (isset($data['role'])) {
             $this->guardRole($request, $data['role']);
         }
+        if (isset($data['username']) && $data['username'] !== $user->username) {
+            abort_unless($request->user()->can('users.change_username'), 403, 'Only a Developer can change a username.');
+        } else {
+            unset($data['username']);
+        }
         if ($user->is($request->user()) && ((isset($data['role']) && $data['role'] !== $user->role) || (isset($data['is_active']) && ! $data['is_active']))) {
             abort(422, 'You cannot change your own role or disable your own account.');
         }
         $this->guardLastDeveloper($user, $data);
-        $before = $user->only(['email', 'display_name', 'role', 'is_active']);
+        $before = $user->only(['username', 'email', 'display_name', 'role', 'is_active']);
         $user->fill($data)->save();
         if (isset($data['is_active']) && ! $data['is_active']) {
             DB::table('sessions')->where('user_id', $user->id)->delete();
         }
-        $this->audit($request, 'users.update', $user, $before, $user->only(['email', 'display_name', 'role', 'is_active']));
+        $this->audit($request, 'users.update', $user, $before, $user->only(['username', 'email', 'display_name', 'role', 'is_active']));
 
         return response()->json($user->only(self::SHOWN));
     }
@@ -75,12 +81,24 @@ class UserController extends Controller
     public function resetPassword(Request $request, User $user): JsonResponse
     {
         $this->guardTarget($request, $user);
-        $temp = $this->tempPassword();
-        $user->forceFill(['password' => $temp, 'must_change_password' => true])->save();
-        DB::table('sessions')->where('user_id', $user->id)->delete();
-        $this->audit($request, 'users.reset_password', $user, null, null);
+        // generate: a random temporary password is shown once. manual: the operator types one (Developers only).
+        $data = $request->validate([
+            'mode' => ['sometimes', Rule::in(['generate', 'manual'])],
+            'password' => ['required_if:mode,manual', 'nullable', 'confirmed', ProfileController::passwordRule()],
+            'must_change' => ['sometimes', 'boolean'],
+        ]);
+        $mode = $data['mode'] ?? 'generate';
+        abort_if($mode === 'manual' && ! $request->user()->can('users.set_password'), 403, 'Only a Developer can type a password for someone else.');
+        // A generated password always has to be replaced; a typed one may be kept if the operator chooses
+        $mustChange = $mode === 'generate' ? true : (bool) ($data['must_change'] ?? true);
+        $password = $mode === 'manual' ? $data['password'] : $this->tempPassword();
 
-        return response()->json(['temporary_password' => $temp]);
+        $user->forceFill(['password' => $password, 'must_change_password' => $mustChange, 'password_changed_at' => now()])->save();
+        DB::table('sessions')->where('user_id', $user->id)->delete();
+        $request->attributes->set('audit', ['action' => 'users.reset_password', 'target' => ['type' => 'user', 'id' => $user->id, 'label' => $user->username],
+            'meta' => ['mode' => $mode, 'must_change' => $mustChange]]);
+
+        return response()->json($mode === 'generate' ? ['temporary_password' => $password, 'must_change' => true] : ['must_change' => $mustChange]);
     }
 
     public function resetTwoFactor(Request $request, User $user): JsonResponse

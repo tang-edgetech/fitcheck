@@ -43,40 +43,40 @@ export default function TwoFactorSetup({ onDone }: { onDone: (me: Me) => void })
 
   if (codes) {
     return (
-      <div className="grid gap-4">
-        <Alert type="success" showIcon title="Two-factor sign-in is on." description="Save these recovery codes somewhere safe. If you lose your phone, each code lets you sign in once. They won't be shown again." />
-        <pre className="m-0 grid grid-cols-2 gap-x-6 gap-y-1 rounded-lg bg-[#f7f9fb] p-4 font-mono text-[15px] tracking-wide">{codes.map((c) => <span key={c}>{c}</span>)}</pre>
-        <div className="flex flex-wrap gap-2">
-          <Button onClick={copyCodes}>Copy</Button>
-          <Button onClick={downloadCodes}>Download .txt</Button>
-          <Button type="primary" onClick={() => me && onDone(me)}>I&apos;ve saved them</Button>
+      <div className="two-factor-setup two-factor-setup--done grid gap-4">
+        <Alert className="two-factor-alert two-factor-alert--enabled" type="success" showIcon title="Two-factor sign-in is on." description="Save these recovery codes somewhere safe. If you lose your phone, each code lets you sign in once. They won't be shown again." />
+        <pre className="recovery-codes m-0 grid grid-cols-2 gap-x-6 gap-y-1 rounded-lg bg-[#f7f9fb] p-4 font-mono text-[15px] tracking-wide">{codes.map((c) => <span key={c} className="recovery-code">{c}</span>)}</pre>
+        <div className="recovery-codes-actions flex flex-wrap gap-2">
+          <Button className="recovery-codes-btn recovery-codes-btn--copy" onClick={copyCodes}>Copy</Button>
+          <Button className="recovery-codes-btn recovery-codes-btn--download" onClick={downloadCodes}>Download .txt</Button>
+          <Button className="recovery-codes-btn recovery-codes-btn--saved" type="primary" onClick={() => me && onDone(me)}>I&apos;ve saved them</Button>
         </div>
       </div>
     );
   }
   if (!start) {
     return (
-      <div className="grid gap-3">
-        <p className="m-0 text-[#5c6978]">You&apos;ll need an authenticator app on your phone, such as Google Authenticator, Microsoft Authenticator, Authy or 1Password.</p>
-        <div><Button type="primary" onClick={begin} loading={busy}>Set up two-factor sign-in</Button></div>
+      <div className="two-factor-setup two-factor-setup--intro grid gap-3">
+        <p className="two-factor-setup-help m-0 text-[#5c6978]">You&apos;ll need an authenticator app on your phone, such as Google Authenticator, Microsoft Authenticator, Authy or 1Password.</p>
+        <div className="two-factor-setup-start"><Button className="two-factor-setup-btn two-factor-setup-btn--start" type="primary" onClick={begin} loading={busy}>Set up two-factor sign-in</Button></div>
       </div>
     );
   }
   return (
-    <div className="grid gap-5 md:grid-cols-[220px_1fr]">
+    <div className="two-factor-setup two-factor-setup--scan grid gap-5 md:grid-cols-[220px_1fr]">
       {/* SVG comes from our own API (bacon-qr-code), not from user input */}
-      <div className="h-[220px] w-[220px] rounded-lg border border-solid border-[#e3e8ee] bg-white p-2.5 [&_svg]:h-full [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: start.qr_svg }} aria-label="QR code for your authenticator app" role="img" />
-      <div className="grid content-start gap-3">
-        <ol className="m-0 grid gap-1.5 pl-5">
-          <li>Open your authenticator app and add an account.</li>
-          <li>Scan the QR code. If you can&apos;t scan, enter this key: <Typography.Text code copyable={{ text: start.secret }} className="break-all">{start.secret.replace(/(.{4})/g, "$1 ").trim()}</Typography.Text></li>
-          <li>Enter the 6-digit code the app shows.</li>
+      <div className="two-factor-qr h-[220px] w-[220px] rounded-lg border border-solid border-[#e3e8ee] bg-white p-2.5 [&_svg]:h-full [&_svg]:w-full" dangerouslySetInnerHTML={{ __html: start.qr_svg }} aria-label="QR code for your authenticator app" role="img" />
+      <div className="two-factor-setup-body grid content-start gap-3">
+        <ol className="two-factor-steps m-0 grid gap-1.5 pl-5">
+          <li className="two-factor-step">Open your authenticator app and add an account.</li>
+          <li className="two-factor-step">Scan the QR code. If you can&apos;t scan, enter this key: <Typography.Text code copyable={{ text: start.secret }} className="two-factor-secret break-all">{start.secret.replace(/(.{4})/g, "$1 ").trim()}</Typography.Text></li>
+          <li className="two-factor-step">Enter the 6-digit code the app shows.</li>
         </ol>
-        <Form form={form} layout="inline" onFinish={confirm} requiredMark={false}>
-          <Form.Item name="code" rules={[{ required: true, pattern: /^\s*\d{3}\s?\d{3}\s*$/, message: "Enter the 6 digits" }]}>
-            <Input placeholder="123 456" inputMode="numeric" autoComplete="one-time-code" maxLength={7} className="w-36" autoFocus />
+        <Form className="form form--two-factor-confirm" form={form} layout="inline" onFinish={confirm} requiredMark={false}>
+          <Form.Item className="form-field form-field--code" name="code" rules={[{ required: true, pattern: /^\s*\d{3}\s?\d{3}\s*$/, message: "Enter the 6 digits" }]}>
+            <Input placeholder="123 456" inputMode="numeric" autoComplete="one-time-code" maxLength={7} className="form-input form-input--code w-36" autoFocus />
           </Form.Item>
-          <Button type="primary" htmlType="submit" loading={busy}>Turn on</Button>
+          <Button className="form-btn form-btn--turn-on" type="primary" htmlType="submit" loading={busy}>Turn on</Button>
         </Form>
       </div>
     </div>

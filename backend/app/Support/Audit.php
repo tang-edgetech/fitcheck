@@ -17,14 +17,14 @@ class Audit
 {
     private const SECRET_KEYS = '/pass|secret|token|code|recovery|otp/i';
 
-    public static function success(string $action, array $target = [], array $meta = [], ?User $user = null): void
+    public static function success(string $action, array $target = [], array $meta = [], ?User $user = null, int $httpStatus = 200): void
     {
-        static::record($action, 'success', $target, $meta, $user);
+        static::record($action, 'success', $target, $meta, $user, $httpStatus);
     }
 
-    public static function failed(string $action, array $target = [], array $meta = [], ?User $user = null): void
+    public static function failed(string $action, array $target = [], array $meta = [], ?User $user = null, ?int $httpStatus = null): void
     {
-        static::record($action, 'failed', $target, $meta, $user);
+        static::record($action, 'failed', $target, $meta, $user, $httpStatus);
     }
 
     /**

@@ -33,7 +33,7 @@ class DashboardController extends Controller
                 'errors_24h' => $request->user()->can('systemlogs.view')
                     ? SystemLog::query()->whereIn('level', ['error', 'critical', 'alert', 'emergency'])->where('created_at', '>=', $day)->count() : null,
             ],
-            'recent' => AuditLog::query()->orderByDesc('id')->limit(8)->get(['id', 'created_at', 'username', 'action', 'status', 'target_label']),
+            'recent' => AuditLog::query()->orderByDesc('id')->limit(8)->get(['id', 'created_at', 'username', 'action', 'status', 'target_label', 'http_status', 'meta']),
         ]);
     }
 }

@@ -62,5 +62,6 @@ Route::middleware(['auth:sanctum', 'session.policy', 'audit', 'throttle:240,1'])
 
         Route::get('settings', [SettingController::class, 'show'])->middleware('can:settings.manage')->name('settings.show');
         Route::put('settings', [SettingController::class, 'update'])->middleware('can:settings.manage')->name('settings.update');
+        Route::post('settings/system-log/prune', [SettingController::class, 'pruneSystemLog'])->middleware('can:systemlogs.view')->name('settings.prune-system-log');
     });
 });

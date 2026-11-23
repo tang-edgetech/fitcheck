@@ -23,13 +23,19 @@ class ProfileController extends Controller
     {
         $user = $request->user();
         $data = $request->validate([
+            'username' => ['sometimes', 'required', 'string', 'min:3', 'max:50', 'alpha_dash', Rule::unique('users', 'username')->ignore($user->id)],
             'display_name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
         ]);
-        $before = $user->only(['display_name', 'email']);
+        if (isset($data['username']) && $data['username'] !== $user->username) {
+            abort_unless($user->can('users.change_username'), 403, 'Only a Developer can change a username.');
+        } else {
+            unset($data['username']);
+        }
+        $before = $user->only(['username', 'display_name', 'email']);
         $user->fill($data)->save();
         $request->attributes->set('audit', ['action' => 'profile.update', 'target' => ['type' => 'user', 'id' => $user->id, 'label' => $user->username],
-            'meta' => ['before' => $before, 'after' => $user->only(['display_name', 'email'])]]);
+            'meta' => ['before' => $before, 'after' => $user->only(['username', 'display_name', 'email'])]]);
 
         return response()->json(AuthController::payload($user));
     }

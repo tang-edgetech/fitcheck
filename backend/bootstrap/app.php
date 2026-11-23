@@ -41,7 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // AuditMutations middleware, so record the read-only ones here (one row per denial).
         $exceptions->report(function (AuthorizationException|AccessDeniedHttpException $e) {
             if (in_array(request()->method(), ['GET', 'HEAD'], true)) {
-                Audit::failed('access.denied', [], ['reason' => $e->getMessage(), 'route' => request()->route()?->getName()]);
+                Audit::failed('access.denied', [], ['reason' => $e->getMessage(), 'route' => request()->route()?->getName()], null, 403);
             }
         })->stop();
     })->create();

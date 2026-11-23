@@ -31,7 +31,7 @@ class EnforceSessionPolicy
         }
 
         if ($reason) {
-            Audit::success('auth.session_end', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['reason' => $reason], $user);
+            Audit::success('auth.session_end', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['reason' => $reason], $user, 401);
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();

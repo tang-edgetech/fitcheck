@@ -21,6 +21,11 @@ class DatabaseHandler extends AbstractProcessingHandler
         }
         self::$writing = true;
         try {
+            // Settings > Log > lowest level to keep (the channel's LOG_DB_LEVEL is the floor)
+            $min = Level::fromName((string) \App\Support\Settings::get('log.system_level', 'info'));
+            if ($record->level->isLowerThan($min)) {
+                return;
+            }
             $context = $record->context;
             if (isset($context['exception']) && $context['exception'] instanceof Throwable) {
                 $e = $context['exception'];

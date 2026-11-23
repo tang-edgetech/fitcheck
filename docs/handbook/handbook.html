@@ -1,0 +1,286 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Fitcheck Admin Handbook</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm; @bottom-center { content: "Fitcheck Admin Handbook  ·  " counter(page); font: 9pt "Segoe UI", Arial, sans-serif; color: #8a96a5; } }
+  @page :first { @bottom-center { content: none; } }
+  * { box-sizing: border-box; }
+  body { font: 10.5pt/1.55 "Segoe UI", Inter, Arial, sans-serif; color: #17202b; margin: 0; }
+  h1, h2, h3 { line-height: 1.25; }
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; page-break-after: always; }
+  .cover-top { display: flex; align-items: center; gap: 10px; font-size: 14pt; font-weight: 700; }
+  .logo { width: 34px; height: 34px; border-radius: 8px; background: #2f5bea; color: #fff; display: grid; place-items: center; font-size: 16pt; }
+  .cover h1 { font-size: 34pt; margin: 0 0 6mm; letter-spacing: -0.5px; }
+  .cover .lead { font-size: 13pt; color: #3d4a59; max-width: 135mm; }
+  .cover-art { border-radius: 10px; border: 1px solid #e3e8ee; width: 100%; box-shadow: 0 10px 30px rgba(23,32,43,.12); }
+  .cover-foot { color: #5c6978; font-size: 10pt; border-top: 1px solid #e3e8ee; padding-top: 4mm; display: flex; justify-content: space-between; }
+  .page { page-break-after: always; }
+  .toc h1, .intro h1, .quick h1 { font-size: 20pt; margin: 0 0 6mm; }
+  .toc ol { list-style: none; padding: 0; margin: 0; }
+  .toc li { display: flex; gap: 10px; padding: 3.2mm 0; border-bottom: 1px solid #eef1f5; font-size: 11.5pt; }
+  .toc .n { width: 24px; height: 24px; flex: none; border-radius: 50%; background: #e6ecfd; color: #2f5bea; font-weight: 700; display: grid; place-items: center; font-size: 10pt; }
+  .toc a { color: inherit; text-decoration: none; } .toc small { display: block; color: #5c6978; font-size: 9.5pt; }
+  .intro h2 { font-size: 13pt; margin: 7mm 0 2mm; }
+  .legend { display: flex; gap: 10px; align-items: center; background: #f7f9fb; border: 1px solid #e3e8ee; border-radius: 8px; padding: 3mm 4mm; }
+  .dot { width: 22px; height: 22px; border-radius: 50%; background: #fa541c; color: #fff; font-weight: 700; display: grid; place-items: center; flex: none; font-size: 10pt; }
+  table { width: 100%; border-collapse: collapse; font-size: 10pt; }
+  th, td { text-align: left; padding: 2.4mm 3mm; border-bottom: 1px solid #e3e8ee; vertical-align: top; }
+  th { background: #f7f9fb; color: #5c6978; font-weight: 600; }
+  .quick td:last-child, .quick th:last-child { text-align: center; width: 18mm; }
+  .chapter { page-break-before: always; }
+  .chapter-head { display: flex; gap: 5mm; align-items: flex-start; border-bottom: 2px solid #2f5bea; padding-bottom: 4mm; margin-bottom: 5mm; }
+  .chapter-no { width: 13mm; height: 13mm; border-radius: 10px; background: #2f5bea; color: #fff; font-size: 18pt; font-weight: 700; display: grid; place-items: center; flex: none; }
+  .chapter h1 { font-size: 20pt; margin: 0 0 1.5mm; } .summary { margin: 0; color: #5c6978; font-size: 11pt; }
+  .block { margin-bottom: 7mm; } .block h2 { font-size: 13pt; margin: 0 0 3mm; color: #17202b; }
+  figure { margin: 0 0 4mm; break-inside: avoid; }
+  figure img { width: 100%; display: block; border: 1px solid #e3e8ee; border-radius: 8px; }
+  figcaption { font-size: 9pt; color: #5c6978; margin-top: 1.5mm; }
+  ol.steps { margin: 2mm 0; padding: 0; list-style: none; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 0 0 2.2mm 9mm; break-inside: avoid; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 0.3mm; width: 6mm; height: 6mm; border-radius: 50%; background: #fa541c; color: #fff; font-weight: 700; font-size: 8.5pt; display: grid; place-items: center; }
+  .tip { background: #fff8e6; border-left: 3px solid #faad14; border-radius: 0 6px 6px 0; padding: 2.4mm 3.5mm; margin: 2.5mm 0; font-size: 10pt; break-inside: avoid; }
+  .tip b { color: #ad6800; margin-right: 6px; }
+  .roles td:first-child { width: 60mm; }
+</style></head><body>
+
+<div class="cover">
+  <div class="cover-top"><span class="logo">F</span> Fitcheck</div>
+  <div>
+    <h1>Admin Handbook</h1>
+    <p class="lead">How to manage the Fitcheck responsive tester: devices, menu groups, people, security settings and the audit log, step by step.</p>
+  </div>
+  <img class="cover-art" src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/dashboard.svg" alt="">
+  <div class="cover-foot"><span>For accounts with the <b>Admin</b> role</span><span>23 November 2026</span></div>
+</div>
+
+<div class="page toc">
+  <h1>Contents</h1>
+  <ol>
+    <li><span class="n">i</span><a href="#about">About this handbook<small>Roles, the ⓘ help button, how to read the pictures</small></a></li>
+    <li><span class="n">1</span><a href="#getting-started">Signing in for the first time<small>How to sign in, and the three short steps every new account completes before using the admin panel.</small></a></li><li><span class="n">2</span><a href="#dashboard">Dashboard<small>A quick health check: what's live on the tester, account security, and recent activity.</small></a></li><li><span class="n">3</span><a href="#screen-views">Screen views (devices)<small>Every device the tester can show: its name, size and frame. Add, edit, hide or remove devices here.</small></a></li><li><span class="n">4</span><a href="#menu-groups">Menu groups<small>The tabs across the top of the tester, such as Popular or Tablets, and which devices each one shows.</small></a></li><li><span class="n">5</span><a href="#users">Users<small>Everyone who can sign in to the admin panel: add people, switch accounts on or off, and help with passwords.</small></a></li><li><span class="n">6</span><a href="#audit-log">Audit log<small>A permanent record of every sign-in, change, export and blocked request, and whether it worked.</small></a></li><li><span class="n">7</span><a href="#settings-general">Settings: General<small>The site name and how the tester opens for new visitors.</small></a></li><li><span class="n">8</span><a href="#settings-security">Settings: Security<small>Rules that protect every account: two-factor sign-in, session length, passwords and lockout.</small></a></li><li><span class="n">9</span><a href="#settings-extra">Settings: Extra<small>An announcement banner on the tester, and a contact address for visitors who need help.</small></a></li><li><span class="n">10</span><a href="#profile">My profile<small>Your own details, password and two-factor sign-in.</small></a></li><li><span class="n">11</span><a href="#tester">The responsive tester (public site)<small>What visitors see, so you can explain it and check your changes.</small></a></li>
+    <li><span class="n">✓</span><a href="#quick">Quick reference<small>Common tasks at a glance</small></a></li>
+  </ol>
+</div>
+
+<div class="page intro" id="about">
+  <h1>About this handbook</h1>
+  <p>Fitcheck has two parts. The <b>tester</b> is the public website where anyone pastes a link and sees it on many phones, tablets and screens. The <b>admin panel</b> is where you decide which devices the tester shows, who can sign in, and how the system is protected. This handbook covers everything an Admin can do in the admin panel.</p>
+  <h2>Roles</h2>
+  <table class="roles">
+    <tr><th>Role</th><th style="text-align:left;width:auto">What it can do</th></tr>
+    <tr><td><b>Admin</b> (this handbook)</td><td>Dashboard, screen views, menu groups, users, audit log and settings (General, Security, Extra).</td></tr>
+    <tr><td><b>Developer</b></td><td>Everything an Admin can, plus the system log and log settings, changing usernames, typing a password for someone else, and managing Developer accounts.</td></tr>
+  </table>
+  <h2>Help inside the system</h2>
+  <p>Every page in the admin panel has an <b>ⓘ</b> button next to its title. It opens the instructions for that page, the same ones as in this handbook. The <b>User guide</b> link at the top of every page opens this PDF.</p>
+  <h2>Reading the pictures</h2>
+  <div class="legend"><span class="dot">1</span><span>Orange numbers in a picture point to the part of the screen used in the matching numbered step below it.</span></div>
+  <p>Pictures of the admin panel are simplified drawings, so names and numbers in them are examples. The sign-in page and the tester are real screenshots.</p>
+  <h2>Good habits</h2>
+  <ol class="steps">
+    <li>Turn on two-factor sign-in for your own account (My profile), and keep your recovery codes somewhere safe.</li>
+    <li>Give temporary passwords to people privately, never by group chat or shared email.</li>
+    <li>Hide devices and menu groups instead of deleting them, so you can bring them back.</li>
+    <li>Check the dashboard's failed sign-ins now and then, and the audit log when something looks wrong.</li>
+  </ol>
+</div>
+
+
+<section class="chapter" id="getting-started">
+  <div class="chapter-head"><span class="chapter-no">1</span><div><h1>Signing in for the first time</h1><p class="summary">How to sign in, and the three short steps every new account completes before using the admin panel.</p></div></div>
+  
+  <div class="block">
+    <h2>Sign in</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/login.jpg" alt="The sign-in page at /admin/login"><figcaption>The sign-in page at /admin/login</figcaption></figure>
+    
+    <ol class="steps"><li>Open the admin panel address you were given (it ends in /admin).</li><li>Enter your username or your email address, and your password.</li><li>Select Sign in. If two-factor sign-in is on for your account, enter the 6-digit code from your authenticator app next.</li></ol>
+    <p class="tip"><b>Tip</b>Lost your phone? Choose “Use a recovery code” and enter one of the codes you saved when you set up two-factor sign-in.</p><p class="tip"><b>Tip</b>After several wrong passwords, sign-in is locked for a few minutes. Wait, then try again, or ask another Admin to reset your password.</p>
+  </div>
+  <div class="block">
+    <h2>Complete your account</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/setup.svg" alt="First sign-in: choose a password, add your details, and set up two-factor sign-in if it's required"><figcaption>First sign-in: choose a password, add your details, and set up two-factor sign-in if it's required — numbers match the steps below</figcaption></figure>
+    <p>New accounts, and accounts whose password was reset, start with a temporary password. The panel asks you to finish these steps before anything else:</p>
+    <ol class="steps"><li>Choose your own password. It must have upper and lower case letters, a number and a symbol.</li><li>Enter your display name and email address.</li><li>If two-factor sign-in is required, scan the QR code with an authenticator app (such as Google Authenticator or Microsoft Authenticator), enter the 6-digit code, and save your recovery codes somewhere safe.</li></ol>
+    
+  </div>
+  <div class="block">
+    <h2>Find your way around</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/dashboard.svg" alt="The menu on the left lists every area you can use"><figcaption>The menu on the left lists every area you can use — numbers match the steps below</figcaption></figure>
+    <p>The menu on the left only shows what your role can use. Every page has an ⓘ button next to its title that opens these instructions. Your name at the top right opens My profile and Sign out. You are signed out automatically after a period without activity (set in Settings → Security).</p>
+    
+    
+  </div>
+</section>
+<section class="chapter" id="dashboard">
+  <div class="chapter-head"><span class="chapter-no">2</span><div><h1>Dashboard</h1><p class="summary">A quick health check: what's live on the tester, account security, and recent activity.</p></div></div>
+  
+  <div class="block">
+    <h2>What the dashboard shows</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/dashboard.svg" alt="The dashboard"><figcaption>The dashboard — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Screen views live on the tester: how many devices visitors can see, by type.</li><li>Menu groups: how many tabs the tester shows. Select “Manage menu groups” to change them.</li><li>Accounts with 2FA: how many accounts use two-factor sign-in, and how many still have a temporary password.</li><li>Failed sign-ins in the last 24 hours. A sudden rise can mean someone is guessing passwords.</li><li>Recent activity: the latest actions in plain language, with when they happened. Select “Open audit log” for the full history.</li></ol>
+    <p class="tip"><b>Tip</b>A yellow banner appears when two-factor sign-in is optional. Admins can require it in Settings → Security.</p>
+  </div>
+</section>
+<section class="chapter" id="screen-views">
+  <div class="chapter-head"><span class="chapter-no">3</span><div><h1>Screen views (devices)</h1><p class="summary">Every device the tester can show: its name, size and frame. Add, edit, hide or remove devices here.</p></div></div>
+  
+  <div class="block">
+    <h2>Find and filter devices</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/screen-views.svg" alt="The screen views list with search, filters and bulk actions"><figcaption>The screen views list with search, filters and bulk actions — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Search by name, brand or width, or filter by type (Mobile, Tablet, Desktop, TV), brand or status.</li><li>The On tester switch shows or hides a device for visitors immediately, without deleting it.</li><li>Tick several rows to show, hide or delete them together using the bar that appears above the table.</li></ol>
+    
+  </div>
+  <div class="block">
+    <h2>Add or edit a device</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/screen-view-edit.svg" alt="Editing a screen view, with a live preview of the frame"><figcaption>Editing a screen view, with a live preview of the frame — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Select Add screen view, or the pencil icon on a row.</li><li>Enter the name, brand and type.</li><li>Enter the width and height in CSS pixels (the size the device's browser reports, not the physical screen resolution). The ⇄ button swaps them.</li><li>Choose a frame style (for example Dynamic Island, notch or browser window). The preview updates as you type.</li><li>Pick the menu groups it should appear in, then select Save.</li></ol>
+    <p class="tip"><b>Tip</b>Not sure of a device's CSS size? Search the web for “&lt;device name&gt; viewport size”.</p><p class="tip"><b>Tip</b>To retire a device, turn it off instead of deleting it. You can turn it back on later.</p><p class="tip"><b>Tip</b>Duplicate (the copy icon) is the quickest way to add a similar model.</p>
+  </div>
+</section>
+<section class="chapter" id="menu-groups">
+  <div class="chapter-head"><span class="chapter-no">4</span><div><h1>Menu groups</h1><p class="summary">The tabs across the top of the tester, such as Popular or Tablets, and which devices each one shows.</p></div></div>
+  
+  <div class="block">
+    <h2>Change the menu order</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/menu-groups.svg" alt="Drag a row by its grip (⋮⋮) to move it"><figcaption>Drag a row by its grip (⋮⋮) to move it — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Hold the grip at the left of a row and drag it up or down. A blue line shows where it will land.</li><li>Let go. The new order saves straight away and the tester uses it on its next load.</li><li>Without a mouse: focus the grip with Tab and press the ↑ and ↓ keys.</li></ol>
+    <p class="tip"><b>Tip</b>“Make first” chooses which tab the tester opens on.</p><p class="tip"><b>Tip</b>The On tester switch hides a whole group without deleting it.</p>
+  </div>
+  <div class="block">
+    <h2>Choose and order the devices in a group</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/menu-group-edit.svg" alt="Editing a menu group: add devices, drag to order them"><figcaption>Editing a menu group: add devices, drag to order them — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Select the pencil icon on a group (or Add group).</li><li>Enter the tab name. The ID is used in share links and is created from the name if left empty.</li><li>Use “Add a screen view…” to add devices. Drag them by their grip to set the order visitors see.</li><li>Remove a device from this group with ×. The device itself is not deleted.</li><li>Select Save.</li></ol>
+    
+  </div>
+</section>
+<section class="chapter" id="users">
+  <div class="chapter-head"><span class="chapter-no">5</span><div><h1>Users</h1><p class="summary">Everyone who can sign in to the admin panel: add people, switch accounts on or off, and help with passwords.</p></div></div>
+  
+  <div class="block">
+    <h2>The users list</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/users.svg" alt="The users list with the status switch"><figcaption>The users list with the status switch — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Each row shows the person's name, username, email, role, two-factor status and last sign-in.</li><li>The Status switch turns an account on or off. Turning it off blocks sign-in and signs that person out at once.</li><li>“Temporary password” under the switch means they haven't chosen their own password yet.</li></ol>
+    <p class="tip"><b>Tip</b>Admins can't change Developer accounts; those rows show “Developer only”. You can't disable or delete your own account.</p>
+  </div>
+  <div class="block">
+    <h2>Add a user</h2>
+    
+    
+    <ol class="steps"><li>Select Add user.</li><li>Enter a username (letters, numbers, - and _), and optionally a display name and email.</li><li>Choose the role and select “Create and show password”.</li><li>Copy the temporary password shown and give it to the person privately. It is shown only once.</li></ol>
+    
+  </div>
+  <div class="block">
+    <h2>Edit a user, reset a password or two-factor</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/user-edit.svg" alt="The edit popup with the password and two-factor buttons"><figcaption>The edit popup with the password and two-factor buttons — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Select Edit on the person's row.</li><li>Change their display name, email or role, then select Save.</li><li>Reset password… opens the password options (below).</li><li>Remove two-factor turns off their authenticator, for example if they lost their phone. They set it up again at their next sign-in if it's required.</li></ol>
+    <p class="tip"><b>Tip</b>Both resets sign the person out on every device straight away.</p>
+  </div>
+  <div class="block">
+    <h2>Reset someone's password</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/reset-password.svg" alt="Resetting a password"><figcaption>Resetting a password — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Choose “Generate a temporary password” and select Generate password.</li><li>Copy the password shown and give it to them privately. They must replace it when they sign in.</li></ol>
+    
+  </div>
+</section>
+<section class="chapter" id="audit-log">
+  <div class="chapter-head"><span class="chapter-no">6</span><div><h1>Audit log</h1><p class="summary">A permanent record of every sign-in, change, export and blocked request, and whether it worked.</p></div></div>
+  
+  <div class="block">
+    <h2>Read and filter the log</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/audit-log.svg" alt="The audit log"><figcaption>The audit log — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Each row says who did what, in plain language, with Success or Failed and the HTTP status code (for example 200 OK, 422 invalid input, 403 not allowed).</li><li>Search by user, target or IP address, or filter by status, activity type and date range.</li><li>Select the + at the start of a row to see the details: the technical action code, the request, IP address, browser and exactly what changed.</li></ol>
+    
+  </div>
+  <div class="block">
+    <h2>Export</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/audit-details.svg" alt="Row details and the export bar"><figcaption>Row details and the export bar — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Tick rows, then select Export JSON or Export CSV in the bar that appears.</li><li>Or use “Export all matching” to export everything that matches your current filters.</li><li>Every export is itself recorded in the log.</li></ol>
+    <p class="tip"><b>Tip</b>CSV files open in Excel. JSON keeps every detail and suits other systems.</p>
+  </div>
+  <div class="block">
+    <h2>Check that nothing was tampered with</h2>
+    
+    <p>Select Check integrity. Each row carries a fingerprint linked to the one before it, so any row edited or removed outside the app is detected and its number shown. Rows can never be edited or deleted from the admin panel.</p>
+    
+    
+  </div>
+</section>
+<section class="chapter" id="settings-general">
+  <div class="chapter-head"><span class="chapter-no">7</span><div><h1>Settings: General</h1><p class="summary">The site name and how the tester opens for new visitors.</p></div></div>
+  
+  <div class="block">
+    <h2>General settings</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/settings-general.svg" alt="Settings → General"><figcaption>Settings → General — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Site name: shown in the tester's header and browser tab.</li><li>Tester opens in: Scroll or Grid. Visitors can still switch; their own choice is remembered on their device.</li><li>Device size: True scale or Fill height.</li><li>Select Save. The tester uses the new values on its next load.</li></ol>
+    <p class="tip"><b>Tip</b>Settings has four tabs, each with its own address: General, Security, Log (Developers only) and Extra.</p>
+  </div>
+</section>
+<section class="chapter" id="settings-security">
+  <div class="chapter-head"><span class="chapter-no">8</span><div><h1>Settings: Security</h1><p class="summary">Rules that protect every account: two-factor sign-in, session length, passwords and lockout.</p></div></div>
+  
+  <div class="block">
+    <h2>Security settings</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/settings-security.svg" alt="Settings → Security"><figcaption>Settings → Security — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Require two-factor sign-in for everyone: accounts without it are asked to set it up at their next sign-in. Turning this off asks for your own authenticator code.</li><li>Sign out after inactivity: minutes without activity before someone is signed out (5 to 720).</li><li>Minimum password length: 8 to 64 characters. Upper and lower case, a number and a symbol are always required.</li><li>Failed sign-ins before lockout, and how long the lockout lasts.</li><li>Select Save.</li></ol>
+    <p class="tip"><b>Tip</b>Recommended: require two-factor sign-in, and keep the inactivity timeout at 30 minutes or less.</p>
+  </div>
+</section>
+<section class="chapter" id="settings-extra">
+  <div class="chapter-head"><span class="chapter-no">9</span><div><h1>Settings: Extra</h1><p class="summary">An announcement banner on the tester, and a contact address for visitors who need help.</p></div></div>
+  
+  <div class="block">
+    <h2>Extra settings</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/settings-extra.svg" alt="Settings → Extra"><figcaption>Settings → Extra — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Turn on Announcement banner and enter the message, for example planned maintenance. It appears across the top of the tester.</li><li>Help contact email: shown in the tester's “Blank screen?” help. Leave it empty to hide it.</li><li>Select Save. Turn the banner off again when it's no longer needed.</li></ol>
+    
+  </div>
+</section>
+<section class="chapter" id="profile">
+  <div class="chapter-head"><span class="chapter-no">10</span><div><h1>My profile</h1><p class="summary">Your own details, password and two-factor sign-in.</p></div></div>
+  
+  <div class="block">
+    <h2>Your details and password</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/profile.svg" alt="My profile"><figcaption>My profile — numbers match the steps below</figcaption></figure>
+    
+    <ol class="steps"><li>Open it from your name at the top right, then My profile.</li><li>Update your display name or email and select Save details.</li><li>To change your password, enter your current password and the new one twice. Your other sessions are signed out.</li></ol>
+    
+  </div>
+  <div class="block">
+    <h2>Two-factor sign-in</h2>
+    
+    
+    <ol class="steps"><li>Select Set up, then Set up two-factor sign-in, and scan the QR code with an authenticator app.</li><li>Enter the 6-digit code to turn it on, then save the 8 recovery codes (copy or download them). Each works once.</li><li>New recovery codes and Turn off both ask for your password first.</li></ol>
+    <p class="tip"><b>Tip</b>Keep recovery codes somewhere other than your phone, such as a password manager.</p><p class="tip"><b>Tip</b>Turn off is unavailable while two-factor sign-in is required for everyone.</p>
+  </div>
+</section>
+<section class="chapter" id="tester">
+  <div class="chapter-head"><span class="chapter-no">11</span><div><h1>The responsive tester (public site)</h1><p class="summary">What visitors see, so you can explain it and check your changes.</p></div></div>
+  
+  <div class="block">
+    <h2>Checking a website on many screens</h2>
+    <figure><img src="file:///C:/xampp/htdocs/fitcheck/frontend/public/help/tester.jpg" alt="The public tester: paste a link, pick a menu group, switch between Scroll and Grid"><figcaption>The public tester: paste a link, pick a menu group, switch between Scroll and Grid</figcaption></figure>
+    
+    <ol class="steps"><li>Paste a website address in the box at the top and select Show.</li><li>Pick a menu group (for example Popular, iPhone or Tablets) to see its devices.</li><li>Click the arrow on the active menu group to tick only the devices you want to compare.</li><li>Use View to switch between Scroll (one row you can drag sideways) and Grid (rows of cards, with S/M/L card sizes).</li><li>Use Size: True scale shows real size differences; Fill height makes every device the same height.</li><li>At the bottom: Scroll inside pages, Landscape, and Reload pages. Click a device name to open it large.</li></ol>
+    <p class="tip"><b>Tip</b>The address bar always holds the current view, so copying it shares exactly what you see.</p><p class="tip"><b>Tip</b>A blank screen usually means the website blocks being shown inside other sites. The “Blank screen?” button explains why.</p><p class="tip"><b>Tip</b>Every device and menu group comes from the admin panel: changes you save there appear the next time the tester loads.</p>
+  </div>
+</section>
+
+<section class="chapter quick" id="quick">
+  <div class="chapter-head"><span class="chapter-no">✓</span><div><h1>Quick reference</h1><p class="summary">Common tasks and where to do them.</p></div></div>
+  <table>
+    <tr><th>I want to…</th><th>Where</th><th>Chapter</th></tr>
+    <tr><td>Sign in</td><td>Admin address → username or email + password (+ 6-digit code)</td><td>1</td></tr><tr><td>Hide a device from visitors</td><td>Screen views → turn off its On tester switch</td><td>3</td></tr><tr><td>Add a device</td><td>Screen views → Add screen view → fill in → Save</td><td>3</td></tr><tr><td>Change the order of the tester's tabs</td><td>Menu groups → drag a row by its grip</td><td>4</td></tr><tr><td>Choose which devices a tab shows</td><td>Menu groups → pencil → add / drag / remove → Save</td><td>4</td></tr><tr><td>Add a person</td><td>Users → Add user → copy the temporary password</td><td>5</td></tr><tr><td>Block someone's access at once</td><td>Users → turn off their Status switch</td><td>5</td></tr><tr><td>Someone forgot their password</td><td>Users → Edit → Reset password… → Generate</td><td>5</td></tr><tr><td>Someone lost their phone (2FA)</td><td>Users → Edit → Remove two-factor</td><td>5</td></tr><tr><td>See who changed something</td><td>Audit log → search or filter → expand the row</td><td>6</td></tr><tr><td>Export activity for a report</td><td>Audit log → tick rows or Export all matching → CSV</td><td>6</td></tr><tr><td>Require two-factor for everyone</td><td>Settings → Security → switch on</td><td>8</td></tr><tr><td>Show a maintenance message</td><td>Settings → Extra → Announcement banner</td><td>9</td></tr><tr><td>Change your own password</td><td>Your name (top right) → My profile</td><td>10</td></tr>
+  </table>
+</section>
+</body></html>

@@ -30,7 +30,7 @@ class AuthController extends Controller
 
         if (RateLimiter::tooManyAttempts($key, $max)) {
             $wait = (int) ceil(RateLimiter::availableIn($key) / 60);
-            Audit::failed('auth.login', [], ['username' => $login, 'reason' => 'locked out']);
+            Audit::failed('auth.login', [], ['username' => $login, 'reason' => 'locked out'], null, 429);
 
             return response()->json(['message' => "Too many failed attempts. Try again in {$wait} minute".($wait === 1 ? '' : 's').'.'], 429);
         }
@@ -42,13 +42,13 @@ class AuthController extends Controller
             if (RateLimiter::tooManyAttempts($key, $max)) {
                 Log::warning('Sign-in locked after repeated failures', ['login' => $login, 'ip' => $request->ip()]);
             }
-            Audit::failed('auth.login', $user ? ['type' => 'user', 'id' => $user->id, 'label' => $user->username] : [], ['username' => $login, 'reason' => 'wrong credentials'], $user);
+            Audit::failed('auth.login', $user ? ['type' => 'user', 'id' => $user->id, 'label' => $user->username] : [], ['username' => $login, 'reason' => 'wrong credentials'], $user, 422);
 
             return response()->json(['message' => 'The username, email or password is incorrect.'], 422);
         }
 
         if (! $user->is_active) {
-            Audit::failed('auth.login', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['reason' => 'account disabled'], $user);
+            Audit::failed('auth.login', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['reason' => 'account disabled'], $user, 403);
 
             return response()->json(['message' => 'This account is disabled. Ask an administrator to enable it.'], 403);
         }
@@ -82,7 +82,7 @@ class AuthController extends Controller
         $user = User::query()->findOrFail($id);
         $key = '2fa:'.$user->id;
         if (RateLimiter::tooManyAttempts($key, 5)) {
-            Audit::failed('auth.two_factor', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['reason' => 'too many codes'], $user);
+            Audit::failed('auth.two_factor', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['reason' => 'too many codes'], $user, 429);
 
             return response()->json(['message' => 'Too many wrong codes. Wait a minute and try again.'], 429);
         }
@@ -98,7 +98,7 @@ class AuthController extends Controller
 
         if (! $ok) {
             RateLimiter::hit($key, 60);
-            Audit::failed('auth.two_factor', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['method' => $method], $user);
+            Audit::failed('auth.two_factor', ['type' => 'user', 'id' => $user->id, 'label' => $user->username], ['method' => $method], $user, 422);
 
             return response()->json(['message' => 'That code is not valid. Check your authenticator app and try again.'], 422);
         }

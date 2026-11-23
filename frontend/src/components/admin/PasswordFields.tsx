@@ -7,6 +7,7 @@ export default function PasswordFields({ min }: { min: number }) {
   return (
     <>
       <Form.Item
+        className="form-field form-field--password"
         name="password"
         label="New password"
         extra={`At least ${min} characters, with upper and lower case letters, a number and a symbol.`}
@@ -20,9 +21,10 @@ export default function PasswordFields({ min }: { min: number }) {
         ]}
         hasFeedback
       >
-        <Input.Password autoComplete="new-password" />
+        <Input.Password className="form-input form-input--password" autoComplete="new-password" />
       </Form.Item>
       <Form.Item
+        className="form-field form-field--password-confirmation"
         name="password_confirmation"
         label="Repeat new password"
         dependencies={["password"]}
@@ -32,7 +34,7 @@ export default function PasswordFields({ min }: { min: number }) {
           ({ getFieldValue }) => ({ validator: (_, v) => (!v || getFieldValue("password") === v ? Promise.resolve() : Promise.reject(new Error("The passwords don't match"))) }),
         ]}
       >
-        <Input.Password autoComplete="new-password" />
+        <Input.Password className="form-input form-input--password-confirmation" autoComplete="new-password" />
       </Form.Item>
     </>
   );
