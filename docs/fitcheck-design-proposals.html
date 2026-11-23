@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck Layout Proposals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&family=Plus+Jakarta+Sans:wght@400;600;700&family=DM+Sans:wght@400;600;700&family=Outfit:wght@400;600;700&family=Figtree:wght@400;600;700&family=Inter:wght@400;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: proposal document. Sticky jump nav, five layout sections each pairing a
+   Frontend and Admin wireframe, then a shared foundation (routes, security, roles). */
+:root{
+  --bg:#E9EDF2; --panel:#FFFFFF; --ink:#17202B; --muted:#5C6978; --line:#CBD3DC;
+  --accent:#2F5BEA; --accent-ink:#FFFFFF; --accent-soft:#DCE5FD;
+  --wf-bg:#F6F8FA; --wf-1:#E1E7EE; --wf-2:#C8D1DC; --wf-dark:#262A31; --wf-dark-ink:#C9D2DD;
+  --ok:#1A8A4B; --ok-soft:#D7F0E1; --bad:#C93A3A; --bad-soft:#F8DCDC;
+  --f-body:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#11151B; --panel:#1A2028; --ink:#E4E9EF; --muted:#8C99A8; --line:#2E3742;
+    --accent:#7393FF; --accent-ink:#0D1220; --accent-soft:#1F2A4A;
+    --wf-bg:#151A21; --wf-1:#232B35; --wf-2:#323C48; --wf-dark:#0A0D11; --wf-dark-ink:#A9B4C1;
+    --ok:#4CC383; --ok-soft:#173526; --bad:#F07474; --bad-soft:#3D1D1F;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11151B; --panel:#1A2028; --ink:#E4E9EF; --muted:#8C99A8; --line:#2E3742;
+  --accent:#7393FF; --accent-ink:#0D1220; --accent-soft:#1F2A4A;
+  --wf-bg:#151A21; --wf-1:#232B35; --wf-2:#323C48; --wf-dark:#0A0D11; --wf-dark-ink:#A9B4C1;
+  --ok:#4CC383; --ok-soft:#173526; --bad:#F07474; --bad-soft:#3D1D1F;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.55}
+h1,h2,h3{text-wrap:balance;margin:0;letter-spacing:-.015em}
+p{margin:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Header */
+.intro{padding-block:44px 28px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.intro h1{font-size:clamp(28px,4vw,40px);font-weight:800;margin:8px 0 12px}
+.intro h1 .logo{display:inline-block;width:.42em;height:.7em;border:.1em solid var(--ink);border-radius:.13em;margin-right:.25em;vertical-align:-.04em}
+.intro p{max-width:68ch;color:var(--muted)}
+.stack{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+.chip{font-family:var(--f-mono);font-size:12px;border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:3px 9px}
+
+/* App shell: left menu, one view at a time (hash-routed) */
+[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.app{display:grid;grid-template-columns:250px minmax(0,1fr);max-width:1520px;margin:0 auto}
+.menu{position:sticky;top:env(safe-area-inset-top,0px);align-self:start;height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));overflow-y:auto;
+  padding:22px 14px 22px max(16px,env(safe-area-inset-left,0px));border-right:1px solid var(--line);display:flex;flex-direction:column;gap:18px;z-index:5;background:var(--bg)}
+.m-brand{display:flex;align-items:center;gap:10px;padding:0 10px;font-weight:800;font-size:18px;line-height:1.2}
+.m-brand .logo{width:10px;height:16px;border:2.5px solid var(--ink);border-radius:3px;flex:none}
+.m-brand small{display:block;font-size:12px;color:var(--muted);font-weight:500}
+.m-group{display:flex;flex-direction:column;gap:2px}
+.m-h{font:600 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:0 10px 4px}
+.menu a{display:flex;align-items:center;gap:9px;padding:7px 10px;border-radius:8px;color:var(--ink);text-decoration:none;font-weight:600;font-size:14px;white-space:nowrap}
+.menu a:hover{background:var(--panel)}
+.menu a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.menu a b{font:600 12px var(--f-mono);color:var(--accent);min-width:14px}
+.menu a i{width:12px;height:12px;border-radius:3px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.views{min-width:0}
+main > section{padding-top:40px!important}
+.start{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-top:28px}
+.start a{display:flex;flex-direction:column;gap:6px;text-decoration:none;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.start a:hover{border-color:var(--accent)}
+.start a strong{font-size:18px}
+.start a span{color:var(--muted);font-size:14px}
+.start .sws{display:flex;gap:5px;margin-top:4px}
+.start .sws i{width:18px;height:18px;border-radius:5px}
+.pager{display:flex;justify-content:space-between;gap:12px;padding-block:28px 8px}
+.pager a{flex:0 1 48%;text-decoration:none;color:var(--ink);border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:12px 16px;font-weight:700;min-width:0}
+.pager a:hover{border-color:var(--accent)}
+.pager a small{display:block;font:500 12px var(--f-mono);color:var(--muted)}
+.pager a.next{text-align:right;margin-left:auto}
+
+/* Style switcher on layout views */
+.stybar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:-6px 0 18px;font-size:13px;color:var(--muted)}
+.stybar button{display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--panel);border-radius:999px;padding:4px 11px;font:600 13px var(--f-body);color:var(--ink);cursor:pointer}
+.stybar button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.stybar i{width:11px;height:11px;border-radius:3px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.pair.styled .wf{--wf-bg:var(--s-bg);--panel:var(--s-surface);--wf-1:var(--s-line);--wf-2:color-mix(in srgb,var(--s-line),var(--s-muted) 40%);
+  --accent:var(--s-primary);--accent-soft:var(--s-soft);--accent-ink:#fff;--muted:var(--s-muted);--ink:var(--s-ink);--line:var(--s-line);
+  --wf-dark:var(--s-frame);--wf-dark-ink:var(--s-muted);--ok:#1A8A4B;--ok-soft:#D7F0E1;--bad:#C93A3A;--bad-soft:#F8DCDC;
+  color:var(--s-ink);color-scheme:light;border-color:var(--s-line)}
+.pair.styled .wf .chrome{background:var(--s-surface);border-color:var(--s-line)}
+.pair.styled .b.dk{background:var(--s-surface);color:var(--s-muted);box-shadow:inset -1px 0 0 var(--s-line),inset 0 -1px 0 var(--s-line)}
+.pair.styled .b.dk [style*="#3C424C"],.pair.styled .b.dk [style*="#5B6573"]{background:var(--s-line)!important;color:var(--s-ink)!important}
+.styles.single{grid-template-columns:minmax(0,640px)}
+.styles.single .sd{padding:22px;gap:14px}
+.styles.single .sd-h{font-size:24px}
+.styles.single .sd-bar{font-size:14px;padding:7px 7px 7px 14px}
+.styles.single .sd-table{font-size:13px}
+.styles.single .sd-m{font-size:12px}
+.styles.single .sd-btn{font-size:13px;padding:6px 14px}
+.sty .try{align-self:flex-start;text-decoration:none;font-weight:700;font-size:14px;color:var(--accent)}
+
+/* Layout sections */
+.layout{padding-block:40px;border-bottom:1px solid var(--line)}
+.lhead{display:flex;flex-wrap:wrap;gap:8px 18px;align-items:baseline;margin-bottom:6px}
+.lhead .num{font-family:var(--f-mono);font-size:13px;color:var(--accent);font-weight:600}
+.lhead h2{font-size:26px;font-weight:800}
+.lhead .fit{font-size:13px;color:var(--muted)}
+.pitch{max-width:72ch;color:var(--muted);margin-bottom:22px}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+figure{margin:0;min-width:0}
+figcaption{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-top:8px;color:var(--muted)}
+figcaption b{color:var(--ink);font-weight:700}
+.notes{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:22px}
+.notes h3{font-size:12px;font-family:var(--f-mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-bottom:8px}
+.notes ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:14px}
+.notes > div{min-width:0}
+code{font-family:var(--f-mono);font-size:.86em;background:var(--wf-1);padding:1px 5px;border-radius:4px}
+
+/* Wireframe vocabulary */
+.wf{aspect-ratio:16/10;max-width:100%;border:1px solid var(--line);border-radius:10px;background:var(--wf-bg);overflow:hidden;display:flex;flex-direction:column;box-shadow:0 14px 30px -24px rgba(10,20,40,.6)}
+.wf.dark{--wf-bg:#12161C;--wf-1:#1E252E;--wf-2:#2C3540;--line-in:#2C3540;color:#A9B4C1}
+.chrome{height:20px;flex:none;display:flex;gap:4px;align-items:center;padding:0 8px;border-bottom:1px solid var(--line);background:var(--panel)}
+.wf.dark .chrome{background:#0A0D11;border-color:#2C3540}
+.chrome i{width:6px;height:6px;border-radius:50%;background:var(--wf-2)}
+.chrome span{margin-left:8px;font:9.5px var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden}
+.g{flex:1;min-height:0;display:grid;gap:5px;padding:5px}
+.b{background:var(--wf-1);border-radius:4px;font:9px/1.25 var(--f-mono);color:var(--muted);padding:4px 5px;overflow:hidden;min-width:0;min-height:0;position:relative}
+.b.acc{background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent);color:var(--accent)}
+.b.dk{background:var(--wf-dark);color:var(--wf-dark-ink)}
+.b.clear{background:transparent;padding:0}
+.b.line{background:transparent;box-shadow:inset 0 0 0 1px var(--wf-2)}
+.col{display:flex;flex-direction:column;gap:4px}
+.row{display:flex;gap:4px;align-items:center}
+.pill{display:inline-block;height:9px;border-radius:999px;background:var(--wf-2);flex:none}
+.pill.a{background:var(--accent)}
+.bar{height:5px;border-radius:3px;background:var(--wf-2)}
+.phones{display:flex;gap:5%;align-items:flex-start;justify-content:center;height:100%;padding-top:4%}
+.ph{width:13%;aspect-ratio:9/19;border:2.5px solid var(--wf-dark);border-radius:9px;background:var(--panel);position:relative;flex:none;overflow:hidden}
+.ph::before{content:"";position:absolute;top:5%;left:50%;transform:translateX(-50%);width:30%;height:3.5%;background:var(--wf-dark);border-radius:9px}
+.ph::after{content:"";position:absolute;inset:16% 12% auto;height:40%;background:repeating-linear-gradient(var(--wf-2) 0 3px,transparent 3px 8px)}
+.ph.tab{width:24%;aspect-ratio:3/4;border-radius:7px}
+.ph.lg{width:18%}
+.ph.sel{border-color:var(--accent)}
+.tbl{display:flex;flex-direction:column;gap:3px}
+.tr{display:grid;grid-template-columns:8px 1.2fr 1.6fr 1fr 22px;gap:5px;align-items:center;height:11px}
+.tr.h{opacity:.7}
+.tr .cb{width:7px;height:7px;border:1px solid var(--muted);border-radius:2px}
+.tr .cb.on{background:var(--accent);border-color:var(--accent)}
+.tr.on{background:var(--accent-soft);border-radius:2px}
+.tag{height:8px;border-radius:2px}
+.tag.ok{background:var(--ok-soft);box-shadow:inset 0 0 0 1px var(--ok)}
+.tag.bad{background:var(--bad-soft);box-shadow:inset 0 0 0 1px var(--bad)}
+.bulk{display:flex;gap:4px;align-items:center;background:var(--accent);color:var(--accent-ink);border-radius:3px;padding:2px 5px;font:8.5px var(--f-mono)}
+.bulk em{font-style:normal;margin-left:auto;background:rgba(255,255,255,.22);padding:0 4px;border-radius:2px}
+.lbl{font:8.5px var(--f-mono);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi{display:flex;flex-direction:column;justify-content:space-between}
+.kpi strong{font:600 13px var(--f-body);color:var(--ink)}
+.wf.dark .kpi strong{color:#E4E9EF}
+.spark{height:40%;background:linear-gradient(to top,var(--accent-soft),transparent);border-top:1.5px solid var(--accent);clip-path:polygon(0 70%,15% 55%,30% 62%,45% 30%,60% 42%,75% 18%,90% 28%,100% 10%,100% 100%,0 100%)}
+
+/* Comparison table */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+table{border-collapse:collapse;width:100%;min-width:680px;font-size:14px}
+th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;font-family:var(--f-mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+tr:last-child td{border-bottom:0}
+.dots{font-family:var(--f-mono);letter-spacing:2px;color:var(--accent);white-space:nowrap}
+.dots s{text-decoration:none;color:var(--wf-2)}
+.rec{display:inline-block;font:600 11px var(--f-mono);background:var(--accent);color:var(--accent-ink);border-radius:4px;padding:1px 6px;margin-left:6px;vertical-align:1px}
+
+/* Foundation */
+.section{padding-block:44px}
+.section > h2{font-size:26px;font-weight:800;margin-bottom:6px}
+.section > p.lead{color:var(--muted);max-width:72ch;margin-bottom:22px}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:18px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;min-width:0}
+.card h3{font-size:17px;font-weight:700;margin-bottom:10px}
+.card ul,.card ol{margin:0;padding-left:18px;display:grid;gap:5px;font-size:14px}
+.routes{font-family:var(--f-mono);font-size:12.5px;display:grid;grid-template-columns:auto 1fr;gap:5px 14px}
+.routes span{color:var(--muted);font-family:var(--f-body);font-size:13.5px}
+.flow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:13px;margin-bottom:12px}
+.flow b{background:var(--accent-soft);color:var(--accent);border-radius:6px;padding:3px 9px;font-weight:700}
+.flow i{font-style:normal;color:var(--muted)}
+.mono{font-family:var(--f-mono);font-size:12.5px}
+.acct td:first-child{font-family:var(--f-mono)}
+.y{color:var(--ok);font-weight:700}
+.n{color:var(--muted)}
+.ask{background:var(--accent-soft);border:1px solid var(--accent);border-radius:12px;padding:20px 22px}
+.ask h3{font-size:17px;margin-bottom:10px}
+.ask ol{margin:0;padding-left:20px;display:grid;gap:6px}
+footer{padding-block:28px 48px;color:var(--muted);font-size:13px}
+
+/* Visual styles: each .sd demo is a deliberately light sample, colored by its own --s-* tokens */
+.styles{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+.sty{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.sty-head{display:flex;flex-direction:column;gap:2px}
+.sty-head h3{font-size:17px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.sty-head p{font-size:13px;color:var(--muted)}
+.sd{background:var(--s-bg);color:var(--s-ink);font-family:var(--s-font);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:10px;border:1px solid var(--s-line);color-scheme:light}
+.sd-bar{display:flex;gap:6px;align-items:center;background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--s-rad);padding:5px 5px 5px 10px;font-size:12px}
+.sd-logo{font-family:var(--s-head);font-weight:700;font-size:13px;white-space:nowrap}
+.sd-url{flex:1;min-width:0;color:var(--s-muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sd-btn{background:var(--s-primary);color:var(--s-on);border-radius:max(3px,calc(var(--s-rad) - 3px));padding:4px 10px;font-weight:600;font-size:11.5px;white-space:nowrap}
+.sd-btn.ghost{background:transparent;color:var(--s-primary);box-shadow:inset 0 0 0 1px var(--s-primary)}
+.sd-h{font-family:var(--s-head);font-weight:700;font-size:16px;letter-spacing:-.01em;line-height:1.25}
+.sd-chips{display:flex;gap:5px;flex-wrap:wrap}
+.sd-chips span{font-size:11px;padding:3px 9px;border-radius:999px;border:1px solid var(--s-line);background:var(--s-surface);color:var(--s-ink)}
+.sd-chips .on{background:var(--s-soft);border-color:var(--s-primary);color:var(--s-chip, var(--s-primary));font-weight:600}
+.sd-phones{display:flex;gap:10px;justify-content:center;padding:2px 0}
+.sd-phones i{width:15%;aspect-ratio:9/19;border-radius:9px;border:2.5px solid var(--s-frame);background:var(--s-surface);position:relative;overflow:hidden}
+.sd-phones i::after{content:"";position:absolute;inset:18% 14% auto;height:46%;background:repeating-linear-gradient(var(--s-line) 0 3px,transparent 3px 8px)}
+.sd-phones i::before{content:"";position:absolute;top:5%;left:50%;transform:translateX(-50%);width:32%;height:4%;border-radius:9px;background:var(--s-frame)}
+.sd-phones i.sel{border-color:var(--s-primary)}
+.sd-table{background:var(--s-surface);border:1px solid var(--s-line);border-radius:var(--s-rad);overflow:hidden;font-size:11px}
+.sd-tr{display:grid;grid-template-columns:12px minmax(0,1fr) minmax(0,1fr) auto;gap:8px;align-items:center;padding:6px 10px;border-top:1px solid var(--s-line)}
+.sd-tr:first-child{border-top:0}
+.sd-tr.on{background:var(--s-soft)}
+.sd-cb{width:10px;height:10px;border-radius:3px;border:1.5px solid var(--s-line)}
+.sd-tr.on .sd-cb{background:var(--s-primary);border-color:var(--s-primary)}
+.sd-m{font-family:var(--f-mono);font-size:10.5px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sd-m.mu{color:var(--s-muted)}
+.sd-tag{font-size:10px;font-weight:600;padding:1px 7px;border-radius:max(3px,calc(var(--s-rad) / 2))}
+.sd-tag.ok{color:var(--s-ok);background:color-mix(in srgb,var(--s-ok) 13%,#fff)}
+.sd-tag.bad{color:var(--s-bad);background:color-mix(in srgb,var(--s-bad) 13%,#fff)}
+.sd-foot{display:flex;gap:6px;align-items:center;font-size:11.5px;flex-wrap:wrap}
+.sd-sw{display:inline-flex;align-items:center;gap:6px;margin-left:auto;color:var(--s-muted)}
+.sd-sw b{width:26px;height:15px;border-radius:999px;background:var(--s-primary);position:relative}
+.sd-sw b::after{content:"";position:absolute;right:2px;top:2px;width:11px;height:11px;border-radius:50%;background:#fff}
+.swatches{display:flex;gap:6px}
+.swatches span{flex:1;height:22px;border-radius:5px;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.sty-meta{font-size:12.5px;color:var(--muted);display:grid;gap:3px}
+.sty-meta b{color:var(--ink);font-weight:600}
+.sty pre{margin:0;font:11px/1.5 var(--f-mono);background:var(--wf-1);border-radius:8px;padding:10px;overflow-x:auto;white-space:pre}
+@media (max-width:1060px){.styles{grid-template-columns:repeat(2,1fr)}}
+@media (max-width:640px){.styles{grid-template-columns:1fr}}
+
+@media (max-width:860px){
+  .pair,.cards{grid-template-columns:1fr}
+  .notes{grid-template-columns:1fr}
+}
+@media (max-width:480px){
+  .b,.lbl{font-size:7.5px}
+  .chrome span{font-size:8px}
+}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .menu{height:auto;flex-direction:row;overflow-x:auto;gap:4px;padding:8px max(16px,env(safe-area-inset-right,0px)) 8px max(16px,env(safe-area-inset-left,0px));
+    border-right:0;border-bottom:1px solid var(--line);scrollbar-width:thin}
+  .m-brand,.m-h{display:none}
+  .m-group{display:contents}
+  .menu a{padding:6px 11px;border:1.5px solid var(--line);border-radius:999px;font-size:13px}
+  .menu a[aria-current="page"]{border-color:var(--accent)}
+  .intro{padding-block:28px 20px}
+  .start{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:no-preference){ .menu a,.stybar button{transition:background .15s,border-color .15s,color .15s} }
+html{scroll-padding-top:70px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="menu" aria-label="Design schemas">
+  <div class="m-brand"><span class="logo"></span><span>Fitcheck<small>Design proposals</small></span></div>
+  <div class="m-group"><div class="m-h">Start</div><a href="#overview">Overview</a></div>
+  <div class="m-group"><div class="m-h">Layouts</div>
+    <a href="#workbench"><b>1</b>Workbench</a>
+    <a href="#stage"><b>2</b>Stage</a>
+    <a href="#filmstrip"><b>3</b>Filmstrip</a>
+    <a href="#guided"><b>4</b>Guided</a>
+    <a href="#console"><b>5</b>Console</a>
+  </div>
+  <div class="m-group"><div class="m-h">Light styles</div>
+    <a href="#styles">All six styles</a>
+    <a href="#style-a"><i style="background:#2F5BEA"></i>A · Clean Slate</a>
+    <a href="#style-b"><i style="background:#0B8F72"></i>B · Mint Fresh</a>
+    <a href="#style-c"><i style="background:#E0532B"></i>C · Sunrise Coral</a>
+    <a href="#style-d"><i style="background:#5B3FE0"></i>D · Lavender Soft</a>
+    <a href="#style-e"><i style="background:#0277B6"></i>E · Sky Bright</a>
+    <a href="#style-f"><i style="background:#111111"></i>F · Paper Mono</a>
+  </div>
+  <div class="m-group"><div class="m-h">Details</div>
+    <a href="#compare">Side by side</a>
+    <a href="#foundation">Shared foundation</a>
+    <a href="#decide">Decisions needed</a>
+  </div>
+</aside>
+<div class="views">
+<header class="intro wrap" id="overview">
+  <div class="eyebrow">Proposal · 19 Nov 2026 · Next.js + Tailwind + Ant Design / Laravel + MySQL</div>
+  <h1><span class="logo"></span>Fitcheck: five layouts, six light styles</h1>
+  <p>Fitcheck lets a client paste a URL and see it on real phone and tablet viewports side by side. Each direction below pairs a public <strong>Frontend</strong> (the tester) with an <strong>Admin panel</strong>. The admin wireframe shows the Audit Log screen in every case, since that page carries the most requirements: Success/Failed status, bulk select, and JSON/CSV export. The shared foundation (routes, security, seeded accounts) is the same whichever layout you pick.</p>
+  <div class="stack">
+    <span class="chip">Next.js 15 App Router</span><span class="chip">Tailwind CSS</span><span class="chip">Ant Design 5</span>
+    <span class="chip">Laravel 12 + Sanctum</span><span class="chip">MySQL 8</span><span class="chip">TOTP 2FA</span><span class="chip">Audit + System logs</span>
+  </div>
+  <div class="start">
+    <a href="#workbench"><strong>5 layouts →</strong><span>Workbench, Stage, Filmstrip, Guided and Console. Each shows the client tester and the admin panel, and can be previewed in any style.</span></a>
+    <a href="#styles"><strong>6 light styles →</strong><span>Colour, type and corner treatments, each ready as an Ant Design theme.</span>
+      <span class="sws"><i style="background:#2F5BEA"></i><i style="background:#0B8F72"></i><i style="background:#E0532B"></i><i style="background:#5B3FE0"></i><i style="background:#0277B6"></i><i style="background:#111111"></i></span></a>
+  </div>
+</header>
+
+<main>
+<!-- 1 WORKBENCH -->
+<section class="layout" id="workbench"><div class="wrap">
+  <div class="lhead"><span class="num">Layout 1</span><h2>Workbench</h2><span class="fit">Closest to your current tester · lowest risk</span></div>
+  <p class="pitch">Your existing HTML tool, grown up. The URL bar stays on top, the brand and model picker moves into a collapsible left rail, and the phones fill the canvas. The admin uses the standard Ant Design side-menu layout that most admin users already know.</p>
+  <div class="pair">
+    <figure>
+      <div class="wf" role="img" aria-label="Workbench frontend wireframe: top URL bar, left device rail, phone grid">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app</span></div>
+        <div class="g" style="grid-template-columns:22% 1fr;grid-template-rows:14% 9% 1fr">
+          <div class="b" style="grid-column:1/-1;display:flex;align-items:center;gap:6px">LOGO <div class="b line" style="flex:1;height:70%;padding:2px 5px">https://client-site.com</div><span class="pill a" style="width:32px;height:12px"></span></div>
+          <div class="b" style="grid-row:2/4" >
+            <div class="col">DEVICE RAIL
+              <div class="row"><span class="pill a" style="width:40%"></span></div>
+              <div class="bar" style="width:80%"></div><div class="bar" style="width:70%"></div><div class="bar" style="width:75%"></div>
+              <div class="row"><span class="pill" style="width:45%"></span></div>
+              <div class="bar" style="width:65%"></div><div class="bar" style="width:80%"></div>
+              <div class="row"><span class="pill" style="width:35%"></span></div>
+              <div class="bar" style="width:70%"></div>
+            </div>
+          </div>
+          <div class="b line row" style="gap:6px">zoom <span class="bar" style="width:18%"></span> sync <span class="pill a" style="width:12px"></span> rotate · reload</div>
+          <div class="b clear"><div class="phones"><div class="ph"></div><div class="ph sel"></div><div class="ph"></div><div class="ph"></div></div></div>
+        </div>
+      </div>
+      <figcaption><b>Frontend</b><span>Collapse · Checkbox · Slider · Switch</span></figcaption>
+    </figure>
+    <figure>
+      <div class="wf" role="img" aria-label="Workbench admin wireframe: dark left sider menu, header, audit log table with bulk export bar">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app/admin/audit-logs</span></div>
+        <div class="g" style="grid-template-columns:20% 1fr;grid-template-rows:11% 1fr;padding:0;gap:0">
+          <div class="b dk" style="grid-row:1/3;border-radius:0">
+            <div class="col">FITCHECK<br>
+              <div class="bar" style="background:#3C424C;width:70%"></div>
+              <div class="bar" style="background:#3C424C;width:60%"></div>
+              <div class="bar" style="background:var(--accent);width:80%"></div>
+              <div class="bar" style="background:#3C424C;width:65%"></div>
+              <div class="bar" style="background:#3C424C;width:55%"></div>
+              <div class="bar" style="background:#3C424C;width:60%"></div>
+            </div>
+          </div>
+          <div class="b row" style="border-radius:0;justify-content:space-between">Home / Audit logs <span class="row"><span class="pill" style="width:10px"></span><span class="pill" style="width:30px"></span></span></div>
+          <div class="b clear" style="padding:6px">
+            <div class="col" style="gap:5px">
+              <div class="row"><span class="b line" style="width:30%;height:12px;padding:0"></span><span class="b line" style="width:20%;height:12px;padding:0"></span><span class="b line" style="width:20%;height:12px;padding:0"></span></div>
+              <div class="bulk">3 selected <em>Export JSON</em><em>Export CSV</em></div>
+              <div class="tbl">
+                <div class="tr h"><span class="cb"></span><span class="lbl">USER</span><span class="lbl">ACTION</span><span class="lbl">TIME</span><span class="lbl">STATUS</span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Admin</b><span>Layout.Sider · Menu · Table rowSelection</span></figcaption>
+    </figure>
+  </div>
+  <div class="notes">
+    <div><h3>How it works</h3><ul><li>Rail groups models by brand (Apple, Samsung, Google…) with select counts, like your current pills.</li><li>Toolbar above the canvas keeps zoom, scroll-together, rotate and reload.</li><li>Admin: fixed dark sider, breadcrumb header, filters above every table.</li></ul></div>
+    <div><h3>Strengths</h3><ul><li>Reuses the logic in your existing tester almost as-is.</li><li>Rail gives room for 40+ models without horizontal scrolling.</li><li>Fastest to build: Ant Design's default admin pattern.</li></ul></div>
+    <div><h3>Trade-offs</h3><ul><li>Rail costs ~240px of canvas width on laptops (collapsible).</li><li>Looks familiar rather than distinctive.</li></ul></div>
+  </div>
+</div></section>
+
+<!-- 2 STAGE -->
+<section class="layout" id="stage"><div class="wrap">
+  <div class="lhead"><span class="num">Layout 2</span><h2>Stage</h2><span class="fit">Canvas first · best for client demos</span></div>
+  <p class="pitch">The phones get the whole screen. Everything else lives in a floating dock at the bottom: URL, the active devices as chips, and a button that opens a device drawer. Good when you share your screen with a client. The admin swaps the side menu for a top navigation bar and uses tabs inside each section.</p>
+  <div class="pair">
+    <figure>
+      <div class="wf" role="img" aria-label="Stage frontend wireframe: full canvas phones, floating bottom dock with URL and device chips, right drawer">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app</span></div>
+        <div class="g" style="grid-template-columns:1fr 24%;grid-template-rows:1fr 15%">
+          <div class="b clear"><div class="phones" style="padding-top:6%"><div class="ph lg"></div><div class="ph lg sel"></div><div class="ph lg"></div></div></div>
+          <div class="b" style="grid-row:1/3">
+            <div class="col">DRAWER: DEVICES
+              <div class="row"><span class="pill a" style="width:28%"></span><span class="pill" style="width:28%"></span><span class="pill" style="width:28%"></span></div>
+              <div class="b line" style="height:14px;padding:0"></div><div class="b acc" style="height:14px;padding:0"></div><div class="b line" style="height:14px;padding:0"></div><div class="b acc" style="height:14px;padding:0"></div><div class="b line" style="height:14px;padding:0"></div>
+            </div>
+          </div>
+          <div class="b dk row" style="border-radius:999px;margin:0 8%;gap:5px;padding:0 8px">
+            <span class="b" style="flex:1;height:65%;padding:1px 6px;background:#3C424C;color:#C9D2DD">client-site.com</span>
+            <span class="pill a" style="width:26px;height:11px"></span><span class="pill" style="width:26px;height:11px;background:#5B6573"></span><span class="pill" style="width:26px;height:11px;background:#5B6573"></span><span class="pill" style="width:11px;height:11px;background:#5B6573"></span>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Frontend</b><span>FloatButton · Drawer · Tag · Segmented</span></figcaption>
+    </figure>
+    <figure>
+      <div class="wf" role="img" aria-label="Stage admin wireframe: top horizontal navigation, tabbed page header, full-width audit table">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app/admin/logs</span></div>
+        <div class="g" style="grid-template-rows:11% 13% 1fr;padding:0;gap:0">
+          <div class="b dk row" style="border-radius:0;gap:10px">FITCHECK <span class="bar" style="width:9%;background:#5B6573"></span><span class="bar" style="width:9%;background:#5B6573"></span><span class="bar" style="width:9%;background:var(--accent)"></span><span class="bar" style="width:9%;background:#5B6573"></span><span class="pill" style="margin-left:auto;width:26px;background:#5B6573"></span></div>
+          <div class="b row" style="border-radius:0;gap:10px;background:var(--wf-bg)">Logs <span class="b acc" style="padding:1px 6px">Audit</span><span class="lbl">System</span><span class="lbl">Sign-ins</span></div>
+          <div class="b clear" style="padding:6px 10%">
+            <div class="col" style="gap:5px">
+              <div class="bulk">2 selected <em>Export JSON</em><em>Export CSV</em></div>
+              <div class="tbl">
+                <div class="tr h"><span class="cb"></span><span class="lbl">USER</span><span class="lbl">ACTION</span><span class="lbl">TIME</span><span class="lbl">STATUS</span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Admin</b><span>Menu mode="horizontal" · Tabs · Table</span></figcaption>
+    </figure>
+  </div>
+  <div class="notes">
+    <div><h3>How it works</h3><ul><li>Dock is always visible; device picker slides in from the right and closes on its own.</li><li>Phones render larger, so 3–4 devices fit at 70–80% zoom.</li><li>Admin: top nav (Dashboard · Users · Devices · Logs · Settings), tabs within each.</li></ul></div>
+    <div><h3>Strengths</h3><ul><li>Cleanest look; strong for screen sharing and sales demos.</li><li>Admin content uses full width, good for wide log tables.</li></ul></div>
+    <div><h3>Trade-offs</h3><ul><li>Device selection is one extra click away.</li><li>Top nav gets crowded if the admin grows past ~7 sections.</li></ul></div>
+  </div>
+</div></section>
+
+<!-- 3 FILMSTRIP -->
+<section class="layout" id="filmstrip"><div class="wrap">
+  <div class="lhead"><span class="num">Layout 3</span><h2>Filmstrip</h2><span class="fit">Many devices at once · master-detail admin</span></div>
+  <p class="pitch">All selected devices sit in a single horizontal strip you can swipe through, with a scrub bar at the bottom that scrolls every phone together. Brand filters are a segmented control. The admin is master-detail: click an audit row and its full record (before/after values, IP, browser) opens in a side panel without leaving the list.</p>
+  <div class="pair">
+    <figure>
+      <div class="wf" role="img" aria-label="Filmstrip frontend wireframe: URL bar, brand segmented filter, single horizontal row of phones, bottom scroll scrubber">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app</span></div>
+        <div class="g" style="grid-template-rows:13% 10% 1fr 10%">
+          <div class="b row" style="gap:6px">LOGO <span class="b line" style="flex:1;height:70%;padding:1px 6px">client-site.com</span><span class="lbl">history ▾</span></div>
+          <div class="b clear row" style="gap:4px"><span class="b acc" style="padding:1px 6px">All</span><span class="b line" style="padding:1px 6px">Apple</span><span class="b line" style="padding:1px 6px">Samsung</span><span class="b line" style="padding:1px 6px">Google</span><span class="b line" style="padding:1px 6px">Tablets</span></div>
+          <div class="b clear" style="overflow:hidden"><div class="phones" style="justify-content:flex-start;gap:3%;padding-top:2%"><div class="ph" style="width:11%"></div><div class="ph" style="width:11%"></div><div class="ph sel" style="width:11%"></div><div class="ph" style="width:11%"></div><div class="ph" style="width:11%"></div><div class="ph" style="width:11%"></div><div class="ph" style="width:11%"></div><div class="ph" style="width:11%"></div></div></div>
+          <div class="b row" style="gap:6px">scroll all <span style="flex:1;height:4px;border-radius:3px;background:linear-gradient(90deg,var(--accent) 38%,var(--wf-2) 38%)"></span> 38%</div>
+        </div>
+      </div>
+      <figcaption><b>Frontend</b><span>Segmented · Slider · AutoComplete (history)</span></figcaption>
+    </figure>
+    <figure>
+      <div class="wf" role="img" aria-label="Filmstrip admin wireframe: sider, audit table on left, selected record detail panel on right">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app/admin/audit-logs/8812</span></div>
+        <div class="g" style="grid-template-columns:16% 1fr 34%;grid-template-rows:11% 1fr;padding:0;gap:0">
+          <div class="b dk" style="grid-row:1/3;border-radius:0"><div class="col">MENU<div class="bar" style="background:#3C424C"></div><div class="bar" style="background:var(--accent)"></div><div class="bar" style="background:#3C424C"></div><div class="bar" style="background:#3C424C"></div></div></div>
+          <div class="b" style="grid-column:2/4;border-radius:0">Audit logs</div>
+          <div class="b clear" style="padding:6px">
+            <div class="col" style="gap:5px">
+              <div class="bulk">4 selected <em>JSON</em><em>CSV</em></div>
+              <div class="tbl">
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr on" style="box-shadow:inset 2px 0 0 var(--accent)"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+                <div class="tr"><span class="cb"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="b" style="border-radius:0;border-left:1px solid var(--line)">
+            <div class="col">user.update · <span style="color:var(--bad)">FAILED</span>
+              <div class="bar" style="width:80%"></div><div class="bar" style="width:60%"></div>
+              <div class="b line" style="height:42px;padding:3px">{ "before": …<br>&nbsp; "after": … }</div>
+              <div class="bar" style="width:70%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Admin</b><span>Table · Descriptions · Drawer (inline)</span></figcaption>
+    </figure>
+  </div>
+  <div class="notes">
+    <div><h3>How it works</h3><ul><li>Strip uses scroll-snap; arrows and trackpad swipe move between devices.</li><li>Bottom scrubber replaces "Scroll together" with a visible position.</li><li>Recent URLs saved per signed-in user (history dropdown).</li></ul></div>
+    <div><h3>Strengths</h3><ul><li>Handles 8–12 devices without wrapping into a messy grid.</li><li>Admin detail panel makes audit investigation fast.</li></ul></div>
+    <div><h3>Trade-offs</h3><ul><li>Can't see every device at once on small laptops.</li><li>Three-column admin needs ≥1280px; collapses to a Drawer below that.</li></ul></div>
+  </div>
+</div></section>
+
+<!-- 4 GUIDED -->
+<section class="layout" id="guided"><div class="wrap">
+  <div class="lhead"><span class="num">Layout 4</span><h2>Guided</h2><span class="fit">Non-technical clients · dashboard-first admin</span></div>
+  <p class="pitch">A three-step flow for clients who have never used a responsive tester: paste a link, pick a preset ("Top iPhones", "Android mix", "Tablets") or hand-pick devices, then compare. The admin opens on a dashboard with security at a glance: failed sign-ins, 2FA adoption and the latest audit events.</p>
+  <div class="pair">
+    <figure>
+      <div class="wf" role="img" aria-label="Guided frontend wireframe: step indicator, large URL input, three preset cards">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app</span></div>
+        <div class="g" style="grid-template-rows:12% 1fr;padding:6px 12%">
+          <div class="b clear row" style="justify-content:center;gap:5px"><span class="pill a" style="width:12px;height:12px"></span><span class="bar" style="width:14%;background:var(--accent)"></span><span class="pill a" style="width:12px;height:12px;opacity:.5"></span><span class="bar" style="width:14%"></span><span class="pill" style="width:12px;height:12px"></span><span class="lbl">&nbsp;1 Link · 2 Devices · 3 Compare</span></div>
+          <div class="b clear col" style="justify-content:center;gap:8px;align-items:center">
+            <div class="bar" style="width:46%;height:9px;background:var(--ink);opacity:.75"></div>
+            <div class="bar" style="width:30%"></div>
+            <div class="b line row" style="width:80%;height:22px;padding:0 6px;margin-top:4px">https://client-site.com <span class="pill a" style="margin-left:auto;width:46px;height:13px"></span></div>
+            <div class="row" style="width:80%;gap:6px;margin-top:6px">
+              <div class="b acc" style="flex:1;height:44px">Top iPhones<br>5 devices</div>
+              <div class="b" style="flex:1;height:44px">Android mix<br>6 devices</div>
+              <div class="b" style="flex:1;height:44px">Tablets<br>4 devices</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Frontend</b><span>Steps · Input.Search · Card · Checkbox.Group</span></figcaption>
+    </figure>
+    <figure>
+      <div class="wf" role="img" aria-label="Guided admin wireframe: KPI tiles, sign-in trend chart, security status and recent audit events">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app/admin</span></div>
+        <div class="g" style="grid-template-columns:16% 1fr 1fr 1fr 1fr;grid-template-rows:20% 1fr 1fr;padding:0;gap:5px">
+          <div class="b dk" style="grid-row:1/4;border-radius:0"><div class="col">MENU<div class="bar" style="background:var(--accent)"></div><div class="bar" style="background:#3C424C"></div><div class="bar" style="background:#3C424C"></div><div class="bar" style="background:#3C424C"></div></div></div>
+          <div class="b kpi" style="margin-top:5px">Checks today<strong>1,284</strong></div>
+          <div class="b kpi" style="margin-top:5px">Failed sign-ins<strong style="color:var(--bad)">7</strong></div>
+          <div class="b kpi" style="margin-top:5px">2FA enrolled<strong>3 / 3</strong></div>
+          <div class="b kpi" style="margin-top:5px;margin-right:5px">2FA global<strong style="color:var(--ok)">ON</strong></div>
+          <div class="b" style="grid-column:2/4;display:flex;flex-direction:column;justify-content:space-between">Sign-ins, 14 days<div class="spark"></div></div>
+          <div class="b" style="grid-column:4/6;margin-right:5px">Security status<div class="col" style="margin-top:4px"><div class="row"><span class="tag ok" style="width:9px"></span><span class="bar" style="flex:1"></span></div><div class="row"><span class="tag ok" style="width:9px"></span><span class="bar" style="flex:1"></span></div><div class="row"><span class="tag bad" style="width:9px"></span><span class="bar" style="flex:1"></span></div></div></div>
+          <div class="b" style="grid-column:2/6;margin:0 5px 5px 0">Recent audit events · view all →
+            <div class="tbl" style="margin-top:4px">
+              <div class="tr" style="grid-template-columns:1.2fr 1.6fr 1fr 22px"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag ok"></span></div>
+              <div class="tr" style="grid-template-columns:1.2fr 1.6fr 1fr 22px"><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Admin</b><span>Statistic · Card · Timeline · charts</span></figcaption>
+    </figure>
+  </div>
+  <div class="notes">
+    <div><h3>How it works</h3><ul><li>Presets are managed in the admin (Devices → Presets), so you control what clients see first.</li><li>Step 3 reuses the Workbench canvas; "Edit devices" jumps back to step 2.</li><li>Admin dashboard links each tile to a filtered log view.</li></ul></div>
+    <div><h3>Strengths</h3><ul><li>Easiest for first-time clients; clear call to action.</li><li>Admin surfaces security problems without anyone digging.</li></ul></div>
+    <div><h3>Trade-offs</h3><ul><li>Slower for power users who already know what they want.</li><li>Dashboard needs aggregate queries and a small charts library.</li></ul></div>
+  </div>
+</div></section>
+
+<!-- 5 CONSOLE -->
+<section class="layout" id="console"><div class="wrap">
+  <div class="lhead"><span class="num">Layout 5</span><h2>Console</h2><span class="fit">Agency and QA teams · data-dense</span></div>
+  <p class="pitch">A dark, developer-tools style workspace. Open several URLs as tabs, pick devices from a tree, and inspect the selected device (viewport, pixel ratio, user agent, screenshot) in a right panel. The admin uses an icon-only sidebar, a <code>Ctrl + K</code> command palette, and compact tables with saved filters. Dark is optional here: Console works in any of the <a href="#styles">light styles</a> below.</p>
+  <div class="pair">
+    <figure>
+      <div class="wf dark" role="img" aria-label="Console frontend wireframe: dark three-pane layout with device tree, URL tabs and phones, inspector panel">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app/workspace</span></div>
+        <div class="g" style="grid-template-columns:18% 1fr 22%;grid-template-rows:11% 1fr">
+          <div class="b" style="grid-row:1/3"><div class="col">DEVICES<div class="bar" style="width:60%"></div><div class="bar" style="width:75%;margin-left:12%;background:var(--accent)"></div><div class="bar" style="width:70%;margin-left:12%"></div><div class="bar" style="width:60%"></div><div class="bar" style="width:72%;margin-left:12%;background:var(--accent)"></div><div class="bar" style="width:55%"></div><div class="bar" style="width:68%;margin-left:12%"></div></div></div>
+          <div class="b row" style="gap:3px;padding:0 3px"><span class="b acc" style="padding:1px 5px">client-site.com ×</span><span class="b line" style="padding:1px 5px">staging.client… ×</span><span class="lbl">+</span></div>
+          <div class="b" style="grid-row:1/3;grid-column:3"><div class="col">INSPECTOR<span class="lbl">402 × 874 @3x</span><span class="lbl">iOS 26 Safari UA</span><div class="bar"></div><div class="bar" style="width:70%"></div><div class="b acc" style="height:13px;padding:1px 4px;margin-top:4px">Screenshot</div><div class="b line" style="height:13px;padding:1px 4px">Copy share link</div></div></div>
+          <div class="b clear" style="--panel:#E1E7EE"><div class="phones" style="padding-top:5%"><div class="ph lg"></div><div class="ph lg sel"></div><div class="ph tab"></div></div></div>
+        </div>
+      </div>
+      <figcaption><b>Frontend</b><span>Tree · Tabs (editable) · Descriptions · Splitter</span></figcaption>
+    </figure>
+    <figure>
+      <div class="wf" role="img" aria-label="Console admin wireframe: icon sidebar, command palette overlay, compact audit table">
+        <div class="chrome"><i></i><i></i><i></i><span>fitcheck.app/admin/audit-logs</span></div>
+        <div class="g" style="grid-template-columns:7% 1fr;grid-template-rows:11% 1fr;padding:0;gap:0;position:relative">
+          <div class="b dk" style="grid-row:1/3;border-radius:0"><div class="col" style="align-items:center;gap:7px;padding-top:4px"><span class="pill" style="width:9px;background:#5B6573"></span><span class="pill a" style="width:9px"></span><span class="pill" style="width:9px;background:#5B6573"></span><span class="pill" style="width:9px;background:#5B6573"></span><span class="pill" style="width:9px;background:#5B6573"></span></div></div>
+          <div class="b row" style="border-radius:0;gap:6px">Audit logs <span class="b line" style="padding:0 5px">status:failed</span><span class="b line" style="padding:0 5px">7d</span><span class="lbl" style="margin-left:auto">Ctrl K</span></div>
+          <div class="b clear" style="padding:5px">
+            <div class="col" style="gap:3px">
+              <div class="bulk">12 selected <em>Export JSON</em><em>Export CSV</em></div>
+              <div class="tbl" style="gap:2px">
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+                <div class="tr on"><span class="cb on"></span><span class="bar"></span><span class="bar"></span><span class="bar"></span><span class="tag bad"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="b" style="position:absolute;left:30%;right:14%;top:24%;background:var(--panel);box-shadow:0 8px 24px -8px rgba(0,0,0,.45),inset 0 0 0 1px var(--line);padding:5px">
+            <div class="b line" style="height:12px;padding:0 4px">› go to system logs</div>
+            <div class="col" style="margin-top:4px"><span class="b acc" style="padding:1px 4px">System logs</span><span class="lbl">Settings › Security › 2FA</span><span class="lbl">Users › dev-admin-1</span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption><b>Admin</b><span>Sider collapsed · Modal palette · Table size="small"</span></figcaption>
+    </figure>
+  </div>
+  <div class="notes">
+    <div><h3>How it works</h3><ul><li>Workspace keeps open URLs and device sets per user (stored in MySQL).</li><li>Inspector can request a server-side screenshot (Laravel queue + headless browser).</li><li>Command palette searches pages, users, settings and log IDs.</li></ul></div>
+    <div><h3>Strengths</h3><ul><li>Fastest for teams checking many client sites daily.</li><li>Most screen space for data in the admin.</li></ul></div>
+    <div><h3>Trade-offs</h3><ul><li>Steep for non-technical clients.</li><li>Screenshots add a headless browser service to deploy.</li><li>Largest build of the five.</li></ul></div>
+  </div>
+</div></section>
+
+<!-- COMPARISON -->
+<section class="section" id="compare"><div class="wrap">
+  <h2>Side by side</h2>
+  <p class="lead">Rated 1–5. Build effort assumes the shared foundation below is done once and counts only the layout-specific work.</p>
+  <div class="tablewrap">
+    <table>
+      <thead><tr><th>Layout</th><th>Ease for clients</th><th>Devices on screen</th><th>Admin density</th><th>Build effort (lower is less)</th><th>Best for</th></tr></thead>
+      <tbody>
+        <tr><td><b>1 Workbench</b><span class="rec">Recommended</span></td><td class="dots">●●●●<s>●</s></td><td class="dots">●●●●<s>●</s></td><td class="dots">●●●<s>●●</s></td><td class="dots">●●<s>●●●</s></td><td>Shipping fast; mixed audience</td></tr>
+        <tr><td><b>2 Stage</b></td><td class="dots">●●●●<s>●</s></td><td class="dots">●●●<s>●●</s></td><td class="dots">●●●<s>●●</s></td><td class="dots">●●<s>●●●</s></td><td>Client demos, screen sharing</td></tr>
+        <tr><td><b>3 Filmstrip</b></td><td class="dots">●●●<s>●●</s></td><td class="dots">●●●●●</td><td class="dots">●●●●<s>●</s></td><td class="dots">●●●<s>●●</s></td><td>Large device sets, audit investigation</td></tr>
+        <tr><td><b>4 Guided</b></td><td class="dots">●●●●●</td><td class="dots">●●●<s>●●</s></td><td class="dots">●●●<s>●●</s></td><td class="dots">●●●<s>●●</s></td><td>Non-technical clients, self-serve</td></tr>
+        <tr><td><b>5 Console</b></td><td class="dots">●●<s>●●●</s></td><td class="dots">●●●●<s>●</s></td><td class="dots">●●●●●</td><td class="dots">●●●●●</td><td>Agencies and QA teams</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p style="margin-top:14px;color:var(--muted);font-size:14px;max-width:80ch">Layouts mix well: a common pick is the <b>Guided</b> landing page in front of the <b>Workbench</b> canvas, with the <b>Filmstrip</b> master-detail admin for logs.</p>
+</div></section>
+
+<!-- LIGHT STYLES -->
+<section class="section" id="styles" style="padding-top:0"><div class="wrap">
+  <h2>Light visual styles</h2>
+  <p class="lead">Six bright colour and type directions. Each one is an Ant Design theme (one <code>ConfigProvider</code> token set) plus matching Tailwind colours, so any style can be paired with any of the five layouts. The admin sider switches to <code>theme="light"</code>. On any layout page, use "Preview in style" to see that layout recoloured. Each sample shows the tester bar, device chips, phones, an audit log row and the 2FA switch.</p>
+  <div class="styles">
+    <article class="sty">
+      <div class="sty-head"><h3><span class="mono" style="color:var(--accent)">A</span> Clean Slate<span class="rec">Recommended</span></h3><p>Your current tester's blue, tidied up. Neutral and safe for any client.</p></div>
+      <div class="sd" style='--s-bg:#F4F6F9;--s-surface:#FFFFFF;--s-primary:#2F5BEA;--s-soft:#E3EAFD;--s-ink:#17202B;--s-muted:#66727F;--s-line:#DCE2E9;--s-ok:#1A8A4B;--s-bad:#D03B3B;--s-frame:#262A31;--s-on:#FFFFFF;--s-font:"Manrope",system-ui,sans-serif;--s-head:"Manrope",system-ui,sans-serif;--s-rad:8px' role="img" aria-label="Clean Slate style sample">
+        <div class="sd-bar"><span class="sd-logo">Fitcheck</span><span class="sd-url">https://client-site.com</span><span class="sd-btn">Load</span></div>
+        <div class="sd-h">Check your site on 3 phones</div>
+        <div class="sd-chips"><span class="on">Apple · 2</span><span>Samsung · 1</span><span>Google</span><span>Tablets</span></div>
+        <div class="sd-phones"><i></i><i class="sel"></i><i></i></div>
+        <div class="sd-table">
+          <div class="sd-tr on"><span class="sd-cb"></span><span class="sd-m">dev-admin</span><span class="sd-m mu">user.update</span><span class="sd-tag ok">Success</span></div>
+          <div class="sd-tr"><span class="sd-cb"></span><span class="sd-m">super-admin</span><span class="sd-m mu">auth.2fa</span><span class="sd-tag bad">Failed</span></div>
+        </div>
+        <div class="sd-foot"><span class="sd-btn">Export CSV</span><span class="sd-btn ghost">Export JSON</span><span class="sd-sw">2FA <b></b></span></div>
+      </div>
+      <div class="swatches"><span style="background:#F4F6F9" title="bg #F4F6F9"></span><span style="background:#2F5BEA" title="primary #2F5BEA"></span><span style="background:#E3EAFD" title="soft #E3EAFD"></span><span style="background:#17202B" title="ink #17202B"></span><span style="background:#1A8A4B" title="ok #1A8A4B"></span><span style="background:#D03B3B" title="bad #D03B3B"></span></div>
+      <div class="sty-meta"><span><b>Type:</b> Manrope</span><span><b>Shape:</b> 8px radius · Light sider, blue accents, thin borders</span></div>
+      <pre>token: {
+  colorPrimary: '#2F5BEA',
+  colorBgLayout: '#F4F6F9',
+  borderRadius: 8,
+  fontFamily: 'Manrope',
+}</pre>
+    </article>
+    <article class="sty">
+      <div class="sty-head"><h3><span class="mono" style="color:var(--accent)">B</span> Mint Fresh</h3><p>Soft green tint with a teal primary. Calm and trustworthy.</p></div>
+      <div class="sd" style='--s-bg:#F2FAF6;--s-surface:#FFFFFF;--s-primary:#0B8F72;--s-soft:#DDF3EB;--s-ink:#12302A;--s-muted:#5D7570;--s-line:#D3E6DF;--s-ok:#1F9D55;--s-bad:#D9483B;--s-frame:#1F3A34;--s-on:#FFFFFF;--s-font:"Plus Jakarta Sans",system-ui,sans-serif;--s-head:"Plus Jakarta Sans",system-ui,sans-serif;--s-rad:12px' role="img" aria-label="Mint Fresh style sample">
+        <div class="sd-bar"><span class="sd-logo">Fitcheck</span><span class="sd-url">https://client-site.com</span><span class="sd-btn">Load</span></div>
+        <div class="sd-h">Check your site on 3 phones</div>
+        <div class="sd-chips"><span class="on">Apple · 2</span><span>Samsung · 1</span><span>Google</span><span>Tablets</span></div>
+        <div class="sd-phones"><i></i><i class="sel"></i><i></i></div>
+        <div class="sd-table">
+          <div class="sd-tr on"><span class="sd-cb"></span><span class="sd-m">dev-admin</span><span class="sd-m mu">user.update</span><span class="sd-tag ok">Success</span></div>
+          <div class="sd-tr"><span class="sd-cb"></span><span class="sd-m">super-admin</span><span class="sd-m mu">auth.2fa</span><span class="sd-tag bad">Failed</span></div>
+        </div>
+        <div class="sd-foot"><span class="sd-btn">Export CSV</span><span class="sd-btn ghost">Export JSON</span><span class="sd-sw">2FA <b></b></span></div>
+      </div>
+      <div class="swatches"><span style="background:#F2FAF6" title="bg #F2FAF6"></span><span style="background:#0B8F72" title="primary #0B8F72"></span><span style="background:#DDF3EB" title="soft #DDF3EB"></span><span style="background:#12302A" title="ink #12302A"></span><span style="background:#1F9D55" title="ok #1F9D55"></span><span style="background:#D9483B" title="bad #D9483B"></span></div>
+      <div class="sty-meta"><span><b>Type:</b> Plus Jakarta Sans</span><span><b>Shape:</b> 12px radius · Rounded cards, tinted page background</span></div>
+      <pre>token: {
+  colorPrimary: '#0B8F72',
+  colorBgLayout: '#F2FAF6',
+  borderRadius: 12,
+  fontFamily: 'Plus Jakarta Sans',
+}</pre>
+    </article>
+    <article class="sty">
+      <div class="sty-head"><h3><span class="mono" style="color:var(--accent)">C</span> Sunrise Coral</h3><p>Warm off-white with a coral primary. Friendly, good for agencies.</p></div>
+      <div class="sd" style='--s-bg:#FFF8F2;--s-surface:#FFFFFF;--s-primary:#E0532B;--s-soft:#FDE6DC;--s-ink:#2A1D17;--s-muted:#7A6A60;--s-line:#F0DFD3;--s-ok:#2E8B57;--s-bad:#B42318;--s-frame:#3A2A22;--s-on:#FFFFFF;--s-font:"DM Sans",system-ui,sans-serif;--s-head:"DM Sans",system-ui,sans-serif;--s-rad:14px' role="img" aria-label="Sunrise Coral style sample">
+        <div class="sd-bar"><span class="sd-logo">Fitcheck</span><span class="sd-url">https://client-site.com</span><span class="sd-btn">Load</span></div>
+        <div class="sd-h">Check your site on 3 phones</div>
+        <div class="sd-chips"><span class="on">Apple · 2</span><span>Samsung · 1</span><span>Google</span><span>Tablets</span></div>
+        <div class="sd-phones"><i></i><i class="sel"></i><i></i></div>
+        <div class="sd-table">
+          <div class="sd-tr on"><span class="sd-cb"></span><span class="sd-m">dev-admin</span><span class="sd-m mu">user.update</span><span class="sd-tag ok">Success</span></div>
+          <div class="sd-tr"><span class="sd-cb"></span><span class="sd-m">super-admin</span><span class="sd-m mu">auth.2fa</span><span class="sd-tag bad">Failed</span></div>
+        </div>
+        <div class="sd-foot"><span class="sd-btn">Export CSV</span><span class="sd-btn ghost">Export JSON</span><span class="sd-sw">2FA <b></b></span></div>
+      </div>
+      <div class="swatches"><span style="background:#FFF8F2" title="bg #FFF8F2"></span><span style="background:#E0532B" title="primary #E0532B"></span><span style="background:#FDE6DC" title="soft #FDE6DC"></span><span style="background:#2A1D17" title="ink #2A1D17"></span><span style="background:#2E8B57" title="ok #2E8B57"></span><span style="background:#B42318" title="bad #B42318"></span></div>
+      <div class="sty-meta"><span><b>Type:</b> DM Sans</span><span><b>Shape:</b> 14px radius · Large radius, warm neutrals, bold buttons</span></div>
+      <pre>token: {
+  colorPrimary: '#E0532B',
+  colorBgLayout: '#FFF8F2',
+  borderRadius: 14,
+  fontFamily: 'DM Sans',
+}</pre>
+    </article>
+    <article class="sty">
+      <div class="sty-head"><h3><span class="mono" style="color:var(--accent)">D</span> Lavender Soft</h3><p>Pale violet tint with an indigo-violet primary. Modern SaaS feel.</p></div>
+      <div class="sd" style='--s-bg:#F7F5FF;--s-surface:#FFFFFF;--s-primary:#5B3FE0;--s-soft:#ECE8FF;--s-ink:#1F1A3A;--s-muted:#6E6890;--s-line:#E2DEF5;--s-ok:#1A8A5A;--s-bad:#D23F57;--s-frame:#2A2540;--s-on:#FFFFFF;--s-font:"Figtree",system-ui,sans-serif;--s-head:"Outfit",system-ui,sans-serif;--s-rad:16px' role="img" aria-label="Lavender Soft style sample">
+        <div class="sd-bar"><span class="sd-logo">Fitcheck</span><span class="sd-url">https://client-site.com</span><span class="sd-btn">Load</span></div>
+        <div class="sd-h">Check your site on 3 phones</div>
+        <div class="sd-chips"><span class="on">Apple · 2</span><span>Samsung · 1</span><span>Google</span><span>Tablets</span></div>
+        <div class="sd-phones"><i></i><i class="sel"></i><i></i></div>
+        <div class="sd-table">
+          <div class="sd-tr on"><span class="sd-cb"></span><span class="sd-m">dev-admin</span><span class="sd-m mu">user.update</span><span class="sd-tag ok">Success</span></div>
+          <div class="sd-tr"><span class="sd-cb"></span><span class="sd-m">super-admin</span><span class="sd-m mu">auth.2fa</span><span class="sd-tag bad">Failed</span></div>
+        </div>
+        <div class="sd-foot"><span class="sd-btn">Export CSV</span><span class="sd-btn ghost">Export JSON</span><span class="sd-sw">2FA <b></b></span></div>
+      </div>
+      <div class="swatches"><span style="background:#F7F5FF" title="bg #F7F5FF"></span><span style="background:#5B3FE0" title="primary #5B3FE0"></span><span style="background:#ECE8FF" title="soft #ECE8FF"></span><span style="background:#1F1A3A" title="ink #1F1A3A"></span><span style="background:#1A8A5A" title="ok #1A8A5A"></span><span style="background:#D23F57" title="bad #D23F57"></span></div>
+      <div class="sty-meta"><span><b>Type:</b> Outfit headings, Figtree text</span><span><b>Shape:</b> 16px radius · Pill buttons, soft shadows, airy spacing</span></div>
+      <pre>token: {
+  colorPrimary: '#5B3FE0',
+  colorBgLayout: '#F7F5FF',
+  borderRadius: 16,
+  fontFamily: 'Figtree',
+}</pre>
+    </article>
+    <article class="sty">
+      <div class="sty-head"><h3><span class="mono" style="color:var(--accent)">E</span> Sky Bright</h3><p>Bright sky-blue on near-white. Fresh and very readable.</p></div>
+      <div class="sd" style='--s-bg:#EEF7FD;--s-surface:#FFFFFF;--s-primary:#0277B6;--s-soft:#DCEFFB;--s-ink:#0F2A3D;--s-muted:#5A7385;--s-line:#D2E5F2;--s-ok:#15925A;--s-bad:#D9363E;--s-frame:#16334A;--s-on:#FFFFFF;--s-font:"Figtree",system-ui,sans-serif;--s-head:"Figtree",system-ui,sans-serif;--s-rad:10px' role="img" aria-label="Sky Bright style sample">
+        <div class="sd-bar"><span class="sd-logo">Fitcheck</span><span class="sd-url">https://client-site.com</span><span class="sd-btn">Load</span></div>
+        <div class="sd-h">Check your site on 3 phones</div>
+        <div class="sd-chips"><span class="on">Apple · 2</span><span>Samsung · 1</span><span>Google</span><span>Tablets</span></div>
+        <div class="sd-phones"><i></i><i class="sel"></i><i></i></div>
+        <div class="sd-table">
+          <div class="sd-tr on"><span class="sd-cb"></span><span class="sd-m">dev-admin</span><span class="sd-m mu">user.update</span><span class="sd-tag ok">Success</span></div>
+          <div class="sd-tr"><span class="sd-cb"></span><span class="sd-m">super-admin</span><span class="sd-m mu">auth.2fa</span><span class="sd-tag bad">Failed</span></div>
+        </div>
+        <div class="sd-foot"><span class="sd-btn">Export CSV</span><span class="sd-btn ghost">Export JSON</span><span class="sd-sw">2FA <b></b></span></div>
+      </div>
+      <div class="swatches"><span style="background:#EEF7FD" title="bg #EEF7FD"></span><span style="background:#0277B6" title="primary #0277B6"></span><span style="background:#DCEFFB" title="soft #DCEFFB"></span><span style="background:#0F2A3D" title="ink #0F2A3D"></span><span style="background:#15925A" title="ok #15925A"></span><span style="background:#D9363E" title="bad #D9363E"></span></div>
+      <div class="sty-meta"><span><b>Type:</b> Figtree</span><span><b>Shape:</b> 10px radius · White cards on a blue-tinted page</span></div>
+      <pre>token: {
+  colorPrimary: '#0277B6',
+  colorBgLayout: '#EEF7FD',
+  borderRadius: 10,
+  fontFamily: 'Figtree',
+}</pre>
+    </article>
+    <article class="sty">
+      <div class="sty-head"><h3><span class="mono" style="color:var(--accent)">F</span> Paper Mono</h3><p>Pure white, black ink and a yellow highlight. Crisp and editorial.</p></div>
+      <div class="sd" style='--s-bg:#FFFFFF;--s-surface:#FFFFFF;--s-primary:#111111;--s-soft:#FFF1A8;--s-ink:#111111;--s-muted:#6B6B6B;--s-line:#E2E2E2;--s-ok:#13804A;--s-bad:#C62828;--s-frame:#111111;--s-on:#FFFFFF;--s-chip:#111111;--s-font:"Inter",system-ui,sans-serif;--s-head:"Space Grotesk",system-ui,sans-serif;--s-rad:4px' role="img" aria-label="Paper Mono style sample">
+        <div class="sd-bar"><span class="sd-logo">Fitcheck</span><span class="sd-url">https://client-site.com</span><span class="sd-btn">Load</span></div>
+        <div class="sd-h">Check your site on 3 phones</div>
+        <div class="sd-chips"><span class="on">Apple · 2</span><span>Samsung · 1</span><span>Google</span><span>Tablets</span></div>
+        <div class="sd-phones"><i></i><i class="sel"></i><i></i></div>
+        <div class="sd-table">
+          <div class="sd-tr on"><span class="sd-cb"></span><span class="sd-m">dev-admin</span><span class="sd-m mu">user.update</span><span class="sd-tag ok">Success</span></div>
+          <div class="sd-tr"><span class="sd-cb"></span><span class="sd-m">super-admin</span><span class="sd-m mu">auth.2fa</span><span class="sd-tag bad">Failed</span></div>
+        </div>
+        <div class="sd-foot"><span class="sd-btn">Export CSV</span><span class="sd-btn ghost">Export JSON</span><span class="sd-sw">2FA <b></b></span></div>
+      </div>
+      <div class="swatches"><span style="background:#FFFFFF" title="bg #FFFFFF"></span><span style="background:#111111" title="primary #111111"></span><span style="background:#FFF1A8" title="soft #FFF1A8"></span><span style="background:#111111" title="ink #111111"></span><span style="background:#13804A" title="ok #13804A"></span><span style="background:#C62828" title="bad #C62828"></span></div>
+      <div class="sty-meta"><span><b>Type:</b> Space Grotesk headings, Inter text</span><span><b>Shape:</b> 4px radius · Sharp corners, black buttons, yellow selection</span></div>
+      <pre>token: {
+  colorPrimary: '#111111',
+  colorBgLayout: '#FFFFFF',
+  borderRadius: 4,
+  fontFamily: 'Inter',
+}</pre>
+    </article>
+  </div>
+</div></section>
+
+<!-- FOUNDATION -->
+<section class="section" id="foundation" style="padding-top:0"><div class="wrap">
+  <h2>Shared foundation</h2>
+  <p class="lead">This part is identical for all five layouts.</p>
+  <div class="cards">
+    <div class="card">
+      <h3>Pages</h3>
+      <div class="routes">
+        <b>/</b><span>The tester (layout-specific)</span>
+        <b>/login</b><span>Username or email + password, then 2FA code</span>
+        <b>/admin</b><span>Dashboard</span>
+        <b>/admin/users</b><span>Create, disable, reset password, reset 2FA, assign role</span>
+        <b>/admin/devices</b><span>Device catalog and presets (replaces the hard-coded DEVICES list)</span>
+        <b>/admin/audit-logs</b><span>Filter, bulk select, export JSON / CSV</span>
+        <b>/admin/system-logs</b><span>App errors, queue failures, scheduler runs</span>
+        <b>/admin/settings</b><span>Security: 2FA global toggle, password policy, session timeout</span>
+        <b>/admin/profile</b><span>Display name, email, password, 2FA enrolment, recovery codes</span>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Architecture</h3>
+      <ul>
+        <li>One Next.js app with two route groups, <code>(site)</code> and <code>admin</code>, so one build and one deploy.</li>
+        <li>Laravel API on its own subdomain; Next.js talks to it with <strong>Sanctum SPA cookie auth</strong> (HttpOnly, SameSite, CSRF token). No tokens in localStorage.</li>
+        <li>Ant Design 5 via <code>@ant-design/nextjs-registry</code>; Tailwind's preflight is placed in a lower <code>@layer</code> so it doesn't reset antd buttons and inputs.</li>
+        <li>Roles and permissions with <code>spatie/laravel-permission</code>; every API route checks a permission, not just a role name.</li>
+        <li>Device catalog moves into MySQL so new phones are added from the admin without a deploy.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Sign-in and 2FA</h3>
+      <div class="flow"><b>Username or email</b><i>→</i><b>Password</b><i>→</i><b>6-digit TOTP</b><i>→</i><b>First login: set email, display name, new password</b></div>
+      <ul>
+        <li>One "Username or email" field; the API matches either column (both unique, case-insensitive).</li>
+        <li>TOTP (Google Authenticator, Authy, 1Password) with 8 single-use recovery codes. Secrets encrypted at rest.</li>
+        <li><strong>Global toggle</strong> in Settings → Security. When on, anyone without 2FA must enrol at next sign-in. Turning it off asks for the operator's own 2FA code and is audited.</li>
+        <li>Passwords hashed with Argon2id; 5 failed attempts per account + IP locks for 15 minutes.</li>
+        <li>Idle session timeout (default 30 minutes) and "sign out other sessions" on password change.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Audit log and system log</h3>
+      <ul>
+        <li>Every API action writes one row: user, action (e.g. <code>user.update</code>, <code>settings.2fa.disable</code>, <code>auth.login</code>), target, <strong>status Success or Failed</strong>, IP, browser, before/after JSON, time.</li>
+        <li>Failed attempts are logged too: wrong password, bad 2FA code, permission denied, validation errors.</li>
+        <li>Append-only: no edit or delete endpoint. Each row stores a hash of the previous one, so tampering is detectable.</li>
+        <li>Bulk select rows (or "select all matching filter") and export <strong>JSON</strong> or <strong>CSV</strong>. Exports are queued for large sets, and the export itself is audited.</li>
+        <li>System log: Laravel's log channel written to a MySQL table plus daily files, with level filter (error, warning, info) and stack traces visible to Developers.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:18px">
+    <h3>Seeded accounts and proposed permissions</h3>
+    <p style="color:var(--muted);font-size:14px;margin-bottom:12px">Created by <code>php artisan db:seed</code> on first deploy. Password <code>Admin@1234</code> comes from <code>.env</code>, and each account is forced to change it, set an email and a display name, and enrol 2FA (if enabled) on first sign-in.</p>
+    <div class="tablewrap">
+      <table class="acct">
+        <thead><tr><th>Username</th><th>Role</th><th>Users</th><th>Devices</th><th>Audit logs</th><th>System logs</th><th>Security settings</th></tr></thead>
+        <tbody>
+          <tr><td>dev-admin</td><td>Developer</td><td class="y">Full</td><td class="y">Full</td><td class="y">View, export</td><td class="y">View</td><td class="y">Edit</td></tr>
+          <tr><td>dev-admin-1</td><td>Developer</td><td class="y">Full</td><td class="y">Full</td><td class="y">View, export</td><td class="y">View</td><td class="y">Edit</td></tr>
+          <tr><td>super-admin</td><td>Admin</td><td class="y">Full, except Developer accounts</td><td class="y">Full</td><td class="y">View, export</td><td class="n">No access</td><td class="y">Edit</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div></section>
+
+<!-- DECISIONS -->
+<section class="section" id="decide" style="padding-top:0"><div class="wrap">
+  <div class="ask">
+    <h3>Decisions needed before building</h3>
+    <ol>
+      <li>Which layout, or which mix of frontend and admin layouts?</li>
+      <li>Which light visual style (A–F)? Any style can be paired with any layout.</li>
+      <li>Is the tester at <code>/</code> public, or must clients sign in to use it? (This decides whether clients become users and get saved history.)</li>
+      <li>Do the Developer and Admin permissions in the table above match what you want?</li>
+      <li>2FA by authenticator app only, or also by email code as a fallback?</li>
+    </ol>
+  </div>
+</div></section>
+</main>
+
+<nav class="pager wrap" id="pager" aria-label="Previous and next"></nav>
+<footer class="wrap">Fitcheck proposal. Wireframes are schematic; final screens will use Ant Design components with your existing Manrope type and the light style you choose.</footer>
+</div>
+</div>
+
+<script>
+(function(){
+  var STY={
+    A:{n:"Clean Slate",bg:"#F4F6F9",surface:"#FFFFFF",primary:"#2F5BEA",soft:"#E3EAFD",ink:"#17202B",muted:"#66727F",line:"#DCE2E9",frame:"#262A31"},
+    B:{n:"Mint Fresh",bg:"#F2FAF6",surface:"#FFFFFF",primary:"#0B8F72",soft:"#DDF3EB",ink:"#12302A",muted:"#5D7570",line:"#D3E6DF",frame:"#1F3A34"},
+    C:{n:"Sunrise Coral",bg:"#FFF8F2",surface:"#FFFFFF",primary:"#E0532B",soft:"#FDE6DC",ink:"#2A1D17",muted:"#7A6A60",line:"#F0DFD3",frame:"#3A2A22"},
+    D:{n:"Lavender Soft",bg:"#F7F5FF",surface:"#FFFFFF",primary:"#5B3FE0",soft:"#ECE8FF",ink:"#1F1A3A",muted:"#6E6890",line:"#E2DEF5",frame:"#2A2540"},
+    E:{n:"Sky Bright",bg:"#EEF7FD",surface:"#FFFFFF",primary:"#0277B6",soft:"#DCEFFB",ink:"#0F2A3D",muted:"#5A7385",line:"#D2E5F2",frame:"#16334A"},
+    F:{n:"Paper Mono",bg:"#FFFFFF",surface:"#FFFFFF",primary:"#111111",soft:"#FFF1A8",ink:"#111111",muted:"#6B6B6B",line:"#E2E2E2",frame:"#111111"}
+  };
+  var ORDER=["overview","workbench","stage","filmstrip","guided","console","styles","style-a","style-b","style-c","style-d","style-e","style-f","compare","foundation","decide"];
+  var LABEL={overview:"Overview",workbench:"Layout 1 · Workbench",stage:"Layout 2 · Stage",filmstrip:"Layout 3 · Filmstrip",guided:"Layout 4 · Guided",console:"Layout 5 · Console",
+    styles:"All six styles",compare:"Side by side",foundation:"Shared foundation",decide:"Decisions needed"};
+  Object.keys(STY).forEach(function(k){LABEL["style-"+k.toLowerCase()]="Style "+k+" · "+STY[k].n;});
+
+  var views=[document.getElementById("overview")].concat([].slice.call(document.querySelectorAll("main > section")));
+  var grid=document.querySelector(".styles");
+  var cards=[].slice.call(grid.querySelectorAll(".sty"));
+  cards.forEach(function(a){
+    var code=a.querySelector(".sty-head .mono").textContent.trim();
+    a.dataset.code=code;
+    var t=document.createElement("a"); t.className="try"; t.href="#workbench"; t.textContent="See the layouts in this style →";
+    t.addEventListener("click",function(){applyStyle(code);});
+    a.appendChild(t);
+  });
+
+  /* Style switcher above every layout's wireframes */
+  var bars=[];
+  document.querySelectorAll("section.layout").forEach(function(sec){
+    var pair=sec.querySelector(".pair");
+    var bar=document.createElement("div"); bar.className="stybar"; bar.setAttribute("role","group"); bar.setAttribute("aria-label","Preview in style");
+    var html='<span>Preview in style:</span><button type="button" data-s="">Wireframe</button>';
+    Object.keys(STY).forEach(function(k){html+='<button type="button" data-s="'+k+'" title="'+STY[k].n+'"><i style="background:'+STY[k].primary+'"></i>'+k+'</button>';});
+    bar.innerHTML=html;
+    bar.addEventListener("click",function(e){var b=e.target.closest("button"); if(b) applyStyle(b.dataset.s);});
+    pair.parentNode.insertBefore(bar,pair);
+    bars.push(bar);
+  });
+  function applyStyle(code){
+    var s=STY[code];
+    document.querySelectorAll(".pair").forEach(function(p){
+      if(s){
+        p.classList.add("styled");
+        ["bg","surface","primary","soft","ink","muted","line","frame"].forEach(function(k){p.style.setProperty("--s-"+k,s[k]);});
+      }else{ p.classList.remove("styled"); p.removeAttribute("style"); }
+    });
+    bars.forEach(function(bar){bar.querySelectorAll("button").forEach(function(b){b.setAttribute("aria-pressed",String(b.dataset.s===(s?code:"")));});});
+    try{localStorage.setItem("fitcheck-preview-style",s?code:"");}catch(e){}
+  }
+  var saved=""; try{saved=localStorage.getItem("fitcheck-preview-style")||"";}catch(e){}
+  applyStyle(saved);
+
+  var pager=document.getElementById("pager");
+  var first=true;
+  function route(){
+    var h=decodeURIComponent(location.hash.slice(1));
+    if(ORDER.indexOf(h)<0) h="overview";
+    var m=h.match(/^style-([a-f])$/);
+    var target=m?"styles":h;
+    views.forEach(function(v){v.hidden=v.id!==target;});
+    grid.classList.toggle("single",!!m);
+    cards.forEach(function(a){a.hidden=!!m && a.dataset.code!==m[1].toUpperCase();});
+    document.querySelectorAll(".menu a").forEach(function(a){
+      if(a.getAttribute("href")==="#"+h){a.setAttribute("aria-current","page"); if(!first) a.scrollIntoView({block:"nearest",inline:"nearest"});}
+      else a.removeAttribute("aria-current");
+    });
+    var i=ORDER.indexOf(h), prev=ORDER[i-1], next=ORDER[i+1], html="";
+    if(prev) html+='<a class="prev" href="#'+prev+'"><small>← Previous</small>'+LABEL[prev]+'</a>';
+    if(next) html+='<a class="next" href="#'+next+'"><small>Next →</small>'+LABEL[next]+'</a>';
+    pager.innerHTML=html;
+    if(!first) window.scrollTo({top:0,behavior:"instant"});
+    first=false;
+  }
+  window.addEventListener("hashchange",route);
+  route();
+})();
+</script>
+</body>
+</html>

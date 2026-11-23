@@ -1,0 +1,84 @@
+/* Ant Design's CSS-in-JS goes in the "antd" layer so Tailwind's reset (base) never overrides it,
+   and Tailwind utilities still win over both. */
+@layer theme, base, antd, components, utilities;
+@import "tailwindcss";
+
+@theme inline {
+  --font-sans: var(--font-dm-sans), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-dm-mono), ui-monospace, Consolas, monospace;
+  --color-coral: #e0532b;
+  --color-coral-soft: #fde6dc;
+  --color-ink: #2a1d17;
+  --color-cream: #fff8f2;
+  --color-sand: #f0dfd3;
+  --color-sand-2: #e5cdbd;
+  --color-muted: #7a6a60;
+}
+
+html, body { height: 100%; }
+body { margin: 0; }
+
+/* ---------- Tester scrollbars ----------
+   Themed to match the coral/sand palette in both views (Scroll: horizontal, Grid: vertical). */
+.device-list { scrollbar-width: thin; scrollbar-color: var(--color-sand-2) transparent; }
+.device-list:hover, .device-list:focus-within { scrollbar-color: var(--color-coral) var(--color-sand); }
+.device-list::-webkit-scrollbar { height: 10px; width: 10px; }
+.device-list::-webkit-scrollbar-track { background: var(--color-sand); border-radius: 999px; margin-inline: 24px; }
+.device-list--grid::-webkit-scrollbar-track { margin-inline: 0; margin-block: 8px; }
+.device-list::-webkit-scrollbar-thumb { background: var(--color-sand-2); border-radius: 999px; border: 2px solid var(--color-sand); }
+.device-list:hover::-webkit-scrollbar-thumb { background: var(--color-coral); }
+.device-list::-webkit-scrollbar-thumb:active { background: #c8441f; }
+.device-list::-webkit-scrollbar-corner { background: transparent; }
+.device-list:focus-visible { outline: 2px solid var(--color-coral); outline-offset: -2px; }
+
+/* Drag to scroll: grab cursor on the empty area, frames ignore the pointer mid-drag so it never gets stuck */
+.device-list { cursor: grab; user-select: none; }
+.device-list .device-name { cursor: pointer; }
+.device-list.is-dragging { cursor: grabbing; scroll-snap-type: none; scroll-behavior: auto; }
+.device-list.is-dragging iframe, .device-list.is-dragging .device-name { pointer-events: none; }
+
+/* ---------- Tester footer ---------- */
+.footer-option { display: inline-flex; align-items: center; gap: 8px; padding: 4px 10px 4px 6px; border-radius: 999px; border: 1px solid var(--color-sand); background: #fff; color: var(--color-ink); font: 500 13px/1.2 var(--font-sans); cursor: pointer; user-select: none; transition: border-color .15s, background .15s; }
+.footer-option:hover { border-color: var(--color-sand-2); background: var(--color-cream); }
+.footer-option--on { border-color: #f5c3ae; background: var(--color-coral-soft); }
+.footer-divider { width: 1px; height: 22px; background: var(--color-sand); }
+
+/* ---------- Device frames (tester) ----------
+   One CSS custom property set per frame: --w/--h are CSS pixels of the device,
+   --s is the scale. Changing them never reloads the iframe. */
+.fc-vp {
+  --s: 1; --w: 400; --h: 800; --bz: 12; --rad: 44; --k: clamp(.45, var(--s), 1);
+  --fc-frame: #2b201a; --fc-edge: #4a3a31; --fc-bar-bg: #f6e9df; --fc-bar-ink: #7a6a60;
+  position: relative; flex: none; display: inline-flex; flex-direction: column; align-items: center;
+  background: var(--fc-frame); border: 1px solid var(--fc-edge);
+  padding: calc(var(--bz) * var(--k) * 1px);
+  border-radius: calc((var(--rad) * var(--s) + var(--bz) * var(--k)) * 1px);
+  box-shadow: 0 26px 50px -30px rgba(90, 40, 20, .55);
+}
+.fc-vp.fc-home { --rad: 4; padding-block: calc(46px * var(--k)) calc(10px * var(--k)); }
+.fc-vp.fc-home.fc-rot { padding-block: calc(12px * var(--k)); padding-inline: calc(46px * var(--k)); }
+.fc-vp.fc-tablet { --bz: 16; --rad: 16; }
+.fc-vp.fc-tv { --bz: 12; --rad: 2; border-radius: 6px; margin-bottom: calc(30px * var(--k)); }
+.fc-vp.fc-browser { --bz: 0; --rad: 0; padding: 0; border-radius: 10px; overflow: hidden; background: var(--fc-bar-bg); }
+.fc-vp.fc-none { --bz: 0; --rad: 0; padding: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.fc-screen { position: relative; overflow: hidden; background: #fff; width: calc(var(--w) * var(--s) * 1px); height: calc(var(--h) * var(--s) * 1px); border-radius: calc(var(--rad) * var(--s) * 1px); }
+.fc-screen iframe { position: absolute; left: 0; top: 0; border: 0; display: block; background: #fff; width: calc(var(--w) * 1px); height: calc(var(--h) * 1px); transform: scale(var(--s)); transform-origin: 0 0; }
+.fc-load { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 12px; background: #fff4ec; color: #7a6a60; font: 600 13px/1.4 var(--font-sans); z-index: 1; transition: opacity .35s; }
+.fc-loaded .fc-load { opacity: 0; pointer-events: none; }
+.fc-cut { display: none; position: absolute; z-index: 2; pointer-events: none; background: #000; left: 50%; transform: translateX(-50%); }
+.fc-island .fc-cut { display: block; top: calc(11px * var(--s)); width: calc(125px * var(--s)); height: calc(36px * var(--s)); border-radius: 999px; }
+.fc-notch .fc-cut { display: block; top: 0; width: calc(160px * var(--s)); height: calc(32px * var(--s)); border-radius: 0 0 calc(18px * var(--s)) calc(18px * var(--s)); }
+.fc-hole .fc-cut { display: block; top: calc(12px * var(--s)); width: calc(12px * var(--s)); height: calc(12px * var(--s)); border-radius: 50%; }
+.fc-rot.fc-island .fc-cut { top: 50%; left: calc(11px * var(--s)); transform: translateY(-50%); width: calc(36px * var(--s)); height: calc(125px * var(--s)); }
+.fc-rot.fc-notch .fc-cut { top: 50%; left: 0; transform: translateY(-50%); width: calc(32px * var(--s)); height: calc(160px * var(--s)); border-radius: 0 calc(18px * var(--s)) calc(18px * var(--s)) 0; }
+.fc-rot.fc-hole .fc-cut { top: 50%; left: calc(12px * var(--s)); transform: translateY(-50%); }
+.fc-bar { display: none; align-items: center; gap: 6px; width: 100%; height: 30px; padding: 0 12px; background: var(--fc-bar-bg); color: var(--fc-bar-ink); font: 12px/1 var(--font-sans); box-sizing: border-box; }
+.fc-browser .fc-bar { display: flex; }
+.fc-bar i { width: 9px; height: 9px; border-radius: 50%; background: currentColor; opacity: .35; flex: none; }
+.fc-bar span { margin-left: 8px; flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; background: rgba(255,255,255,.6); border-radius: 6px; padding: 4px 8px; }
+.fc-homebtn { display: none; position: absolute; bottom: calc(8px * var(--k)); left: 50%; transform: translateX(-50%); width: calc(30px * var(--k)); height: calc(30px * var(--k)); border-radius: 50%; border: 2px solid var(--fc-edge); box-sizing: border-box; }
+.fc-home .fc-homebtn { display: block; }
+.fc-home.fc-rot .fc-homebtn { bottom: auto; top: 50%; left: auto; right: calc(8px * var(--k)); transform: translateY(-50%); }
+.fc-stand { display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); width: 28%; height: calc(30px * var(--k)); background: linear-gradient(var(--fc-edge), var(--fc-frame)); clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%); }
+.fc-tv .fc-stand { display: block; }
+@media (prefers-reduced-motion: reduce) { .fc-load { transition: none; } }

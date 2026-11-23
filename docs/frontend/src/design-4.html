@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck · Coral Filmstrip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Design 4 · Coral Filmstrip. Warm light. A whole device family in one swipeable row, shown at true relative size. */
+:root{
+  --bg:#FFF8F2; --panel:#FFFFFF; --ink:#2A1D17; --muted:#7A6A60; --line:#F0DFD3; --line-2:#E5CDBD;
+  --accent:#E0532B; --accent-ink:#FFFFFF; --soft:#FDE6DC;
+  --fc-frame:#2B201A; --fc-edge:#4A3A31; --fc-bar-bg:#F6E9DF; --fc-bar-ink:#7A6A60; --fc-load-bg:#FFF4EC; --fc-load-ink:#7A6A60;
+  --fc-shadow:0 26px 50px -30px rgba(90,40,20,.55); --fc-toast-bg:#2A1D17; --fc-dialog-btn:#E0532B;
+  --f:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:"DM Mono",ui-monospace,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+header{display:flex;align-items:center;gap:16px;padding:16px 24px 10px}
+.logo{display:flex;align-items:baseline;gap:6px;font-weight:700;font-size:22px;letter-spacing:-.03em;color:inherit;text-decoration:none;white-space:nowrap}
+.logo b{color:var(--accent)}
+form.url{flex:1;display:flex;align-items:center;max-width:780px;min-width:0;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 8px 24px -18px rgba(90,40,20,.4)}
+form.url:focus-within{border-color:var(--accent)}
+form.url svg{margin-left:14px;color:var(--muted)}
+form.url input{flex:1;min-width:0;border:0;background:none;padding:12px;outline:none}
+form.url button{margin:4px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:9px 20px;cursor:pointer}
+.acts{display:flex;gap:6px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 13px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;color:inherit;text-decoration:none}
+.btn:hover{border-color:var(--line-2)}
+.btn[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--accent)}
+
+.filters{display:flex;align-items:center;gap:14px;padding:6px 24px 12px;flex-wrap:wrap}
+.groups{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.groups button{border:0;background:none;border-radius:999px;padding:7px 14px;font-weight:600;cursor:pointer;color:var(--muted);white-space:nowrap}
+.groups button:hover{color:var(--ink)}
+.groups button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.groups button small{font:500 11px var(--mono);opacity:.7;margin-left:5px}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;padding:3px;background:var(--panel)}
+.seg button{border:0;background:none;border-radius:9px;padding:5px 11px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--soft);color:var(--accent)}
+.seg-l{font-size:13px;color:var(--muted)}
+
+.strip{position:relative;overflow-x:auto;overflow-y:hidden;display:flex;align-items:flex-end;gap:40px;padding:10px 24px 18px;scroll-snap-type:x proximity;scroll-padding:24px;
+  background:linear-gradient(transparent calc(100% - 18px),var(--line) calc(100% - 18px),var(--line) calc(100% - 17px),transparent calc(100% - 17px))}
+.strip::after{content:"";flex:0 0 1px}
+.item{scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:10px;flex:none}
+.cap{display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center}
+.cap button{border:0;background:none;font-weight:700;cursor:pointer;padding:2px 6px;border-radius:6px}
+.cap button:hover{color:var(--accent);background:var(--soft)}
+.cap small{font:500 11.5px var(--mono);color:var(--muted)}
+.num{font:500 11px var(--mono);color:var(--accent)}
+.blank{margin:auto;text-align:center;color:var(--muted)}
+
+footer{display:flex;align-items:center;gap:10px;padding:10px 24px 14px;border-top:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.arrows{display:flex;gap:4px}
+.arrows button{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);cursor:pointer;display:grid;place-items:center}
+.arrows button:hover{border-color:var(--accent);color:var(--accent)}
+.count{font-size:14px;color:var(--muted)}
+.count b{color:var(--ink)}
+.grow{flex:1}
+.link{border:0;background:none;color:var(--accent);font-weight:600;cursor:pointer}
+
+.focus{position:fixed;inset:0;z-index:60;background:rgba(42,29,23,.55);backdrop-filter:blur(4px);display:none;grid-template-rows:auto minmax(0,1fr);padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.focus.on{display:grid}
+.fbar{display:flex;align-items:center;gap:10px;color:#fff;max-width:1100px;width:100%;margin:0 auto 12px}
+.fbar h2{margin:0;font-size:18px}
+.fbar small{font:500 12px var(--mono);opacity:.8}
+.fbar .grow{flex:1}
+.fbar button{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:600}
+.fstage{display:flex;min-height:0;overflow:auto}
+.fstage > .fc-vp{margin:auto}
+.fc-nav{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+@media (max-width:720px){
+  header{flex-wrap:wrap;padding:12px 14px 8px} form.url{order:3;flex-basis:100%;max-width:none} .acts .lbl{display:none}
+  .filters,.strip,footer{padding-left:14px;padding-right:14px} .strip{gap:22px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html">fit<b>check</b></a>
+  <form class="url" id="urlForm" role="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+    <input id="url" type="text" list="recent" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste a link to see it on a whole family of devices" aria-label="Website link">
+    <datalist id="recent"></datalist>
+    <button type="submit">Show</button>
+  </form>
+  <div class="acts">
+    <button class="btn" id="share" type="button"><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg><span class="lbl">Share</span></button>
+  </div>
+</header>
+
+<div class="filters">
+  <div class="groups" id="groups" role="group" aria-label="Device family"></div>
+  <span class="seg-l">Size</span>
+  <div class="seg" id="mode" role="group" aria-label="Size mode">
+    <button type="button" data-m="true" title="Every device at the same scale, so you see real size differences">True scale</button>
+    <button type="button" data-m="fill" title="Every device as tall as the row">Fill height</button>
+  </div>
+</div>
+
+<div class="strip" id="strip" tabindex="0" aria-label="Devices"></div>
+
+<footer>
+  <div class="arrows"><button type="button" id="prev" aria-label="Scroll left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" id="next" aria-label="Scroll right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>
+  <span class="count" id="count"></span>
+  <span class="grow"></span>
+  <button class="btn" id="scroll" type="button" aria-pressed="true">Scrolling</button>
+  <button class="btn" id="rot" type="button" aria-pressed="false">Landscape</button>
+  <button class="btn" id="reload" type="button">Reload all</button>
+  <button class="link" id="help" type="button">Site not loading?</button>
+</footer>
+
+<div class="focus" id="focus" role="dialog" aria-modal="true" aria-labelledby="fTitle">
+  <div class="fbar"><button type="button" id="fPrev" aria-label="Previous device">←</button><div><h2 id="fTitle"></h2><small id="fSize"></small></div><button type="button" id="fNext" aria-label="Next device">→</button><span class="grow"></span><button type="button" id="fClose">Close · Esc</button></div>
+  <div class="fstage" id="fstage"></div>
+</div>
+
+<script>/*@CORE*/</script>
+<script>
+const $ = s => document.querySelector(s);
+const GROUPS = [
+  {id:"popular", name:"Popular", ids:["ip17pm","ip17p","ip16e","ipse","s25u","s25","px10","a56","rn14"]},
+  {id:"apple", name:"iPhone", f:d => d.type === "Mobile" && d.brand === "Apple"},
+  {id:"samsung", name:"Galaxy", f:d => d.type === "Mobile" && d.brand === "Samsung"},
+  {id:"google", name:"Pixel", f:d => d.type === "Mobile" && d.brand === "Google"},
+  {id:"android", name:"More Android", f:d => d.type === "Mobile" && !["Apple","Samsung","Google"].includes(d.brand)},
+  {id:"tablet", name:"Tablets", f:d => d.type === "Tablet"},
+  {id:"desktop", name:"Laptops & desktops", f:d => d.type === "Desktop"},
+  {id:"tv", name:"TV", f:d => d.type === "TV"}
+];
+const listOf = g => g.ids ? g.ids.map(FC.byId) : FC.DEVICES.filter(g.f);
+const P = FC.readParams();
+const S = {url:P.url, group:GROUPS.some(g => g.id === P.get("group")) ? P.get("group") : "popular",
+           mode:P.get("size") === "fill" ? "fill" : "true", scrolling:P.scrolling, rot:P.rotate, focus:-1};
+const strip = $("#strip");
+let vps = [], fvp = null;
+
+function shown(){ return listOf(GROUPS.find(g => g.id === S.group)); }
+function renderGroups(){
+  $("#groups").innerHTML = GROUPS.map(g => `<button type="button" data-g="${g.id}" aria-pressed="${g.id === S.group}">${g.name}<small>${listOf(g).length}</small></button>`).join("");
+  document.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === S.mode)));
+}
+function build(){
+  strip.innerHTML = ""; vps = [];
+  shown().forEach((d, i) => {
+    const it = document.createElement("div"); it.className = "item";
+    const v = FC.viewport({url:S.url, scrolling:S.scrolling, label:d.name, lazy:true, emptyText:"Paste a link above"});
+    it.innerHTML = `<div class="cap"><span class="num">${String(i + 1).padStart(2, "0")}</span><button type="button" data-i="${i}" title="Open ${d.name} large">${d.name}</button><small></small></div>`;
+    it.appendChild(v.el);
+    strip.appendChild(it); vps.push({d, v, it});
+  });
+  layout();
+}
+function layout(){
+  const H = strip.clientHeight - 28 - 62;
+  const items = vps.map(x => Object.assign(x, FC.dims(x.d, S.rot)));
+  const maxH = Math.max(...items.map(x => x.h + (x.d.shape === "browser" ? 30 : 0)));
+  items.forEach(x => {
+    const s = S.mode === "true" ? Math.min(1, (H - 30) / maxH) : FC.fit(99999, H, x.w, x.h, x.d.shape);
+    x.v.set({w:x.w, h:x.h, s:Math.max(.05, s), shape:x.d.shape, rot:S.rot});
+    x.it.querySelector("small").textContent = `${x.w} × ${x.h}`;
+  });
+  $("#count").innerHTML = `<b>${items.length} devices</b> · ${S.mode === "true" ? "same scale" : "same height"}${S.rot ? " · landscape" : ""}`;
+  $("#rot").setAttribute("aria-pressed", String(S.rot));
+  $("#scroll").setAttribute("aria-pressed", String(S.scrolling));
+  FC.writeParams({url:S.url, group:S.group === "popular" ? "" : S.group, size:S.mode === "fill" ? "fill" : "", scrolling:S.scrolling, rotate:S.rot ? true : ""});
+}
+
+/* Focus view */
+function openFocus(i){
+  S.focus = (i + vps.length) % vps.length;
+  const x = vps[S.focus], r = FC.dims(x.d, S.rot);
+  $("#fTitle").textContent = x.d.name; $("#fSize").textContent = `${r.w} × ${r.h} · ${x.d.type}`;
+  const st = $("#fstage"); st.innerHTML = "";
+  $("#focus").classList.add("on");
+  fvp = FC.viewport({url:S.url, scrolling:S.scrolling, label:x.d.name});
+  st.appendChild(fvp.el);
+  fvp.set({w:r.w, h:r.h, s:FC.fit(st.clientWidth - 20, st.clientHeight - 20, r.w, r.h, x.d.shape), shape:x.d.shape, rot:S.rot});
+  $("#fClose").focus();
+}
+function closeFocus(){ $("#focus").classList.remove("on"); $("#fstage").innerHTML = ""; fvp = null; const b = strip.querySelector(`[data-i="${S.focus}"]`); b && b.focus(); S.focus = -1; }
+strip.addEventListener("click", e => { const b = e.target.closest("[data-i]"); if (b) openFocus(+b.dataset.i); });
+$("#fClose").addEventListener("click", closeFocus);
+$("#fPrev").addEventListener("click", () => openFocus(S.focus - 1));
+$("#fNext").addEventListener("click", () => openFocus(S.focus + 1));
+$("#focus").addEventListener("click", e => { if (e.target.id === "focus" || e.target.id === "fstage") closeFocus(); });
+
+/* Controls */
+$("#groups").addEventListener("click", e => { const b = e.target.closest("[data-g]"); if (!b) return; S.group = b.dataset.g; renderGroups(); build(); strip.scrollLeft = 0; });
+$("#mode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b) return; S.mode = b.dataset.m; renderGroups(); layout(); });
+$("#prev").addEventListener("click", () => strip.scrollBy({left:-strip.clientWidth * .8, behavior:"smooth"}));
+$("#next").addEventListener("click", () => strip.scrollBy({left:strip.clientWidth * .8, behavior:"smooth"}));
+strip.addEventListener("wheel", e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !e.target.closest("iframe") && e.target === strip){ strip.scrollLeft += e.deltaY; e.preventDefault(); } }, {passive:false});
+$("#scroll").addEventListener("click", () => { S.scrolling = !S.scrolling; vps.forEach(x => x.v.setScrolling(S.scrolling)); layout(); });
+$("#rot").addEventListener("click", () => { S.rot = !S.rot; layout(); });
+$("#reload").addEventListener("click", () => vps.forEach(x => x.v.reload()));
+$("#share").addEventListener("click", FC.share);
+$("#help").addEventListener("click", FC.help);
+$("#urlForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const u = FC.normalize($("#url").value);
+  if (!u){ $("#url").setCustomValidity("Enter a link like example.com"); $("#url").reportValidity(); return; }
+  $("#url").setCustomValidity(""); $("#url").value = u; S.url = u; FC.addRecent(u); fillRecent();
+  vps.forEach(x => x.v.setUrl(u)); layout();
+});
+$("#url").addEventListener("input", e => e.target.setCustomValidity(""));
+function fillRecent(){ $("#recent").innerHTML = FC.recent().map(u => `<option value="${u.replace(/"/g, "&quot;")}"></option>`).join(""); }
+document.addEventListener("keydown", e => {
+  if (S.focus >= 0){
+    if (e.key === "Escape") closeFocus();
+    if (e.key === "ArrowLeft") openFocus(S.focus - 1);
+    if (e.key === "ArrowRight") openFocus(S.focus + 1);
+    return;
+  }
+  if (e.target.closest("input")) return;
+  if (e.key === "ArrowLeft") $("#prev").click();
+  if (e.key === "ArrowRight") $("#next").click();
+});
+let rt = 0; window.addEventListener("resize", () => { cancelAnimationFrame(rt); rt = requestAnimationFrame(layout); });
+
+$("#url").value = S.url; fillRecent();
+renderGroups(); build();
+FC.designNav(4);
+</script>
+</body>
+</html>

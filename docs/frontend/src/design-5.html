@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck · Breakpoint Strip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+/* Design 5 · Breakpoint Strip. Warm paper and deep teal. The same page at every breakpoint width, side by side, frameless. */
+:root{
+  --bg:#F5F3EE; --panel:#FFFFFF; --ink:#1C2430; --muted:#66707C; --line:#DEDAD0; --line-2:#C9C3B6;
+  --accent:#0F766E; --accent-ink:#FFFFFF; --soft:#D9EFEC;
+  --fc-edge:#C9C3B6; --fc-load-bg:#FBFAF7; --fc-load-ink:#66707C; --fc-toast-bg:#1C2430; --fc-dialog-btn:#0F766E;
+  --f:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);background:var(--bg);color:var(--ink);font:14.5px/1.45 var(--f);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+header{display:flex;align-items:center;gap:16px;padding:14px 22px;border-bottom:1px solid var(--line);background:var(--bg);flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:10px;font:600 18px var(--f);letter-spacing:-.01em;color:inherit;text-decoration:none;white-space:nowrap}
+.logo i{display:flex;align-items:flex-end;gap:2px;height:18px}
+.logo i b{width:4px;background:var(--accent);border-radius:1px}
+form.url{flex:1;max-width:720px;min-width:220px;display:flex;border:1px solid var(--line-2);border-radius:6px;background:var(--panel)}
+form.url:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--soft)}
+form.url span{align-self:center;padding-left:12px;font:500 12px var(--mono);color:var(--muted)}
+form.url input{flex:1;min-width:0;border:0;background:none;padding:10px;outline:none;font:13.5px var(--mono)}
+form.url button{border:0;border-left:1px solid var(--line-2);background:var(--accent);color:var(--accent-ink);font-weight:600;padding:0 18px;cursor:pointer;border-radius:0 5px 5px 0}
+.acts{display:flex;gap:6px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--panel);border-radius:6px;padding:7px 12px;font-weight:500;font-size:13.5px;cursor:pointer;white-space:nowrap;color:inherit}
+.btn:hover{border-color:var(--ink)}
+.btn[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--accent)}
+
+.ctrl{display:flex;align-items:center;gap:10px 18px;padding:10px 22px;border-bottom:1px solid var(--line);flex-wrap:wrap;font-size:13px}
+.ctrl .lbl{font:600 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.widths{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.wchip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--panel);border-radius:6px;padding:3px 4px 3px 9px;font:500 12.5px var(--mono)}
+.wchip em{font-style:normal;color:var(--accent);font-weight:600}
+.wchip button{border:0;background:none;color:var(--muted);cursor:pointer;width:18px;height:18px;border-radius:4px;line-height:1;padding:0}
+.wchip button:hover{background:var(--bg);color:var(--ink)}
+.addw{display:inline-flex;border:1px dashed var(--line-2);border-radius:6px;overflow:hidden}
+.addw input{width:76px;border:0;padding:4px 8px;font:12.5px var(--mono);background:var(--panel);outline:none}
+.addw button{border:0;border-left:1px dashed var(--line-2);background:var(--panel);padding:0 9px;cursor:pointer;font-weight:600;color:var(--accent)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--panel);padding:4px 10px;cursor:pointer;font:500 12.5px var(--mono)}
+.seg button + button{border-left:1px solid var(--line-2)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+.hin{width:74px;border:1px solid var(--line-2);border-radius:6px;padding:4px 8px;font:12.5px var(--mono);background:var(--panel)}
+.link{border:0;background:none;color:var(--accent);cursor:pointer;padding:0;font-weight:500;text-decoration:underline;text-underline-offset:2px}
+
+.strip{overflow:auto;display:flex;gap:28px;align-items:flex-start;padding:20px 22px 30px}
+.strip::after{content:"";flex:0 0 1px}
+.col{display:flex;flex-direction:column;gap:10px;flex:none}
+.ch{display:flex;flex-direction:column;gap:3px;border-top:3px solid var(--ink);padding-top:8px}
+.ch .w{display:flex;align-items:baseline;gap:8px}
+.ch .w b{font:600 22px var(--mono);letter-spacing:-.02em}
+.ch .w span{font:500 12px var(--mono);color:var(--muted)}
+.ch .bp{font:600 11px var(--mono);background:var(--accent);color:var(--accent-ink);padding:1px 6px;border-radius:4px;align-self:flex-start}
+.ch .bp.base{background:var(--ink)}
+.ch small{color:var(--muted);font-size:12px;max-width:260px}
+.col .fc-vp{background:#fff;box-shadow:0 1px 0 var(--line),0 18px 36px -28px rgba(28,36,48,.5)}
+.col .tools{display:flex;gap:10px;font-size:12.5px}
+.empty{margin:auto;color:var(--muted);text-align:center}
+@media (max-width:720px){ header,.ctrl,.strip{padding-left:14px;padding-right:14px} .acts .t{display:none} }
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html"><i><b style="height:7px"></b><b style="height:11px"></b><b style="height:15px"></b><b style="height:18px"></b></i>Fitcheck <span style="color:var(--muted);font-weight:400">breakpoints</span></a>
+  <form class="url" id="f" role="search"><span>url</span><input id="u" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://your-site.com" aria-label="Website link"><button type="submit">Render</button></form>
+  <div class="acts">
+    <button class="btn" id="help" type="button">?<span class="t"> Not loading</span></button>
+    <button class="btn" id="reload" type="button">Reload<span class="t"> all</span></button>
+    <button class="btn" id="share" type="button">Copy link</button>
+  </div>
+</header>
+
+<div class="ctrl">
+  <span class="lbl">Widths</span>
+  <div class="widths" id="widths"></div>
+  <form class="addw" id="addForm"><input id="addW" type="number" min="240" max="3840" placeholder="e.g. 1440" aria-label="Add a width in pixels"><button type="submit">Add</button></form>
+  <button class="link" id="resetW" type="button">Tailwind set</button>
+  <button class="link" id="devW" type="button">Common devices</button>
+  <span class="lbl">Height</span>
+  <input class="hin" id="h" type="number" min="400" max="2400" step="50" aria-label="Viewport height in pixels">
+  <span class="lbl">Scale</span>
+  <div class="seg" id="scale" role="group" aria-label="Scale"><button type="button" data-s="fit">fit</button><button type="button" data-s=".5">50%</button><button type="button" data-s=".33">33%</button><button type="button" data-s=".25">25%</button></div>
+  <button class="btn" id="scroll" type="button" aria-pressed="true">Scrolling</button>
+</div>
+
+<div class="strip" id="strip"></div>
+
+<script>/*@CORE*/</script>
+<script>
+const $ = s => document.querySelector(s);
+const TW = [360, 640, 768, 1024, 1280, 1536];
+const COMMON = [375, 390, 412, 768, 820, 1366, 1920];
+const P = FC.readParams();
+const parsed = (P.get("widths") || "").split(",").map(Number).filter(n => n >= 240 && n <= 3840);
+const S = {url:P.url, widths:parsed.length ? parsed : [...TW], h:Math.min(2400, Math.max(400, P.height || 900)),
+  scale:["fit", ".5", ".33", ".25"].includes(P.get("scale")) ? P.get("scale") : "fit", scrolling:P.scrolling};
+const strip = $("#strip");
+const cols = new Map();
+
+function bpOf(w){ let n = "base"; FC.BREAKPOINTS.forEach(b => { if (w >= b.w) n = b.n; }); return n; }
+function near(w){
+  // Portrait match, or a phone/tablet turned sideways (laptops and TVs don't rotate)
+  const m = FC.DEVICES.filter(d => d.w === w || (d.h === w && (d.type === "Mobile" || d.type === "Tablet"))).map(d => d.name + (d.w === w ? "" : " (landscape)"));
+  return m.length ? "Same width as " + m.slice(0, 3).join(", ") + (m.length > 3 ? ` +${m.length - 3}` : "") : "";
+}
+function renderControls(){
+  S.widths = [...new Set(S.widths)].sort((a, b) => a - b);
+  $("#widths").innerHTML = S.widths.map(w => `<span class="wchip">${w}<em>${bpOf(w)}</em><button type="button" data-rm="${w}" aria-label="Remove ${w} px">×</button></span>`).join("");
+  $("#h").value = S.h;
+  document.querySelectorAll("#scale button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.s === S.scale)));
+  $("#scroll").setAttribute("aria-pressed", String(S.scrolling));
+}
+function render(){
+  renderControls();
+  // remove columns no longer listed (never re-append existing ones: moving an iframe reloads it)
+  cols.forEach((c, w) => { if (!S.widths.includes(w)){ c.el.remove(); cols.delete(w); } });
+  strip.querySelector(".empty")?.remove();
+  const s = S.scale === "fit" ? Math.max(.12, Math.min(1, (strip.clientHeight - 50 - 90) / S.h)) : +S.scale;
+  S.widths.forEach((w, i) => {
+    let c = cols.get(w);
+    if (!c){
+      const el = document.createElement("div"); el.className = "col";
+      const v = FC.viewport({url:S.url, scrolling:S.scrolling, label:w + " px", emptyText:"Paste a link above"});
+      el.innerHTML = `<div class="ch"><div class="w"><b>${w}</b><span>px wide</span></div><span class="bp ${bpOf(w) === "base" ? "base" : ""}">${bpOf(w)}${bpOf(w) === "base" ? " (no prefix)" : ": " + FC.BREAKPOINTS.find(b => b.n === bpOf(w)).w + "+"}</span><small>${near(w)}</small></div>`;
+      el.appendChild(v.el);
+      c = {el, v}; cols.set(w, c);
+    }
+    // keep DOM order sorted: insert before the next existing column
+    const nextW = S.widths.slice(i + 1).find(x => cols.get(x)?.el.isConnected);
+    if (!c.el.isConnected) strip.insertBefore(c.el, nextW ? cols.get(nextW).el : null);
+    c.v.set({w, h:S.h, s, shape:"none"});
+  });
+  if (!S.widths.length) strip.insertAdjacentHTML("beforeend", `<p class="empty">Add a width above to start.</p>`);
+  FC.writeParams({url:S.url, widths:S.widths.join(",") === TW.join(",") ? "" : S.widths.join(","), height:S.h === 900 ? "" : S.h,
+    scale:S.scale === "fit" ? "" : S.scale, scrolling:S.scrolling});
+}
+
+$("#widths").addEventListener("click", e => { const b = e.target.closest("[data-rm]"); if (b){ S.widths = S.widths.filter(w => w !== +b.dataset.rm); render(); } });
+$("#addForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const w = Math.round(+$("#addW").value);
+  if (!(w >= 240 && w <= 3840)){ $("#addW").setCustomValidity("Use a width from 240 to 3840 px"); $("#addW").reportValidity(); return; }
+  $("#addW").setCustomValidity(""); $("#addW").value = ""; S.widths.push(w); render();
+  requestAnimationFrame(() => cols.get(w)?.el.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"}));
+});
+$("#addW").addEventListener("input", e => e.target.setCustomValidity(""));
+$("#resetW").addEventListener("click", () => { S.widths = [...TW]; render(); });
+$("#devW").addEventListener("click", () => { S.widths = [...COMMON]; render(); });
+$("#h").addEventListener("change", e => { S.h = Math.min(2400, Math.max(400, +e.target.value || 900)); render(); });
+$("#scale").addEventListener("click", e => { const b = e.target.closest("[data-s]"); if (b){ S.scale = b.dataset.s; render(); } });
+$("#scroll").addEventListener("click", () => { S.scrolling = !S.scrolling; cols.forEach(c => c.v.setScrolling(S.scrolling)); render(); });
+$("#reload").addEventListener("click", () => cols.forEach(c => c.v.reload()));
+$("#share").addEventListener("click", FC.share);
+$("#help").addEventListener("click", FC.help);
+$("#f").addEventListener("submit", e => {
+  e.preventDefault();
+  const u = FC.normalize($("#u").value);
+  if (!u){ $("#u").setCustomValidity("Enter a link like your-site.com"); $("#u").reportValidity(); return; }
+  $("#u").setCustomValidity(""); $("#u").value = u; S.url = u; FC.addRecent(u);
+  cols.forEach(c => c.v.setUrl(u)); render();
+});
+$("#u").addEventListener("input", e => e.target.setCustomValidity(""));
+strip.addEventListener("wheel", e => { if (e.target === strip && Math.abs(e.deltaY) > Math.abs(e.deltaX)){ strip.scrollLeft += e.deltaY; e.preventDefault(); } }, {passive:false});
+let rt = 0; window.addEventListener("resize", () => { cancelAnimationFrame(rt); rt = requestAnimationFrame(render); });
+
+$("#u").value = S.url;
+render();
+FC.designNav(5);
+</script>
+</body>
+</html>

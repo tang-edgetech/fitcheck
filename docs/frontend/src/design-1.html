@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck · Split Compare</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Design 1 · Split Compare. Light sky. Two links on the same device: side by side, or one swipe view. */
+:root{
+  --bg:#EEF6FC; --panel:#FFFFFF; --ink:#0F2A3D; --muted:#5A7385; --line:#D2E5F2; --line-2:#B9D3E6;
+  --accent:#0277B6; --accent-ink:#FFFFFF; --soft:#DCEFFB; --a:#0277B6; --b:#C2410C; --b-soft:#FDE8DC;
+  --fc-frame:#132534; --fc-edge:#2E4659; --fc-bar-bg:#E2EEF7; --fc-bar-ink:#5A7385; --fc-load-bg:#F3F8FC; --fc-load-ink:#5A7385;
+  --fc-shadow:0 26px 50px -30px rgba(15,42,61,.55); --fc-toast-bg:#0F2A3D; --fc-dialog-btn:#0277B6;
+  --f:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-rows:auto auto minmax(0,1fr);background:var(--bg);color:var(--ink);font:15px/1.45 var(--f);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+header{display:flex;align-items:center;gap:14px;padding:12px 20px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;font-size:19px;letter-spacing:-.02em;color:inherit;text-decoration:none;white-space:nowrap}
+.logo i{display:flex;gap:2px}
+.logo i b{width:8px;height:15px;border:2.2px solid var(--a);border-radius:2px}
+.logo i b+b{border-color:var(--b)}
+form.urls{flex:1;display:grid;grid-template-columns:1fr auto 1fr auto;gap:8px;align-items:center;min-width:0}
+.field{display:flex;align-items:center;min-width:0;border:1.5px solid var(--line);border-radius:10px;background:var(--bg)}
+.field:focus-within{border-color:var(--accent);background:var(--panel)}
+.field .tag{margin-left:6px;font:700 12px var(--mono);border-radius:6px;padding:3px 7px;color:#fff;background:var(--a);flex:none}
+.field.b .tag{background:var(--b)}
+.field .name{width:72px;border:0;background:none;padding:9px 4px 9px 8px;font-weight:700;font-size:13px;outline:none;border-right:1px solid var(--line)}
+.field .u{flex:1;min-width:0;border:0;background:none;padding:9px 10px;outline:none}
+.swap{border:1px solid var(--line);background:var(--panel);border-radius:999px;width:34px;height:34px;display:grid;place-items:center;cursor:pointer}
+.swap:hover{border-color:var(--accent);color:var(--accent)}
+.go{border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:10px 18px;cursor:pointer}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:7px 11px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;color:inherit}
+.btn:hover{border-color:var(--line-2)}
+.btn[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--accent)}
+
+.tools{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:10px 20px;border-bottom:1px solid var(--line);background:rgba(255,255,255,.6)}
+.seg{display:inline-flex;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:5px 11px;border-radius:7px;font-weight:600;font-size:14px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+select{border:1px solid var(--line);background:var(--panel);border-radius:9px;padding:7px 10px;font-size:14px;max-width:240px;cursor:pointer}
+.grow{flex:1}
+.link{border:0;background:none;color:var(--accent);font-weight:600;cursor:pointer;padding:0}
+
+.stage{overflow:auto;display:flex;padding:24px}
+.pair{margin:auto;display:flex;gap:40px;align-items:flex-start;justify-content:center}
+.side{display:flex;flex-direction:column;align-items:center;gap:12px}
+.lab{display:flex;align-items:center;gap:8px;font-weight:700}
+.lab .tag{font:700 12px var(--mono);border-radius:6px;padding:2px 7px;color:#fff;background:var(--a)}
+.side.b .lab .tag{background:var(--b)}
+.lab small{font-weight:500;color:var(--muted);font-family:var(--mono);font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lab button{border:0;background:none;color:var(--muted);cursor:pointer;display:inline-flex;padding:3px;border-radius:6px}
+.lab button:hover{background:var(--soft);color:var(--accent)}
+.meta{text-align:center;font-size:13px;color:var(--muted);margin-top:4px}
+.meta b{color:var(--ink)}
+
+/* Swipe mode: B sits on top of A, clipped at the handle */
+.swipe{position:relative;margin:auto}
+.swipe .layer{position:absolute;left:0;top:0}
+.swipe .layer.top{clip-path:inset(0 0 0 var(--cut,50%))}
+.handle{position:absolute;top:-10px;bottom:-10px;left:var(--cut,50%);width:0;z-index:5}
+.handle::before{content:"";position:absolute;top:0;bottom:0;left:-1.5px;width:3px;background:var(--ink);border-radius:2px;box-shadow:0 0 0 2px rgba(255,255,255,.8)}
+.handle button{position:absolute;top:50%;left:0;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;border:3px solid #fff;background:var(--ink);color:#fff;cursor:ew-resize;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.3);touch-action:none}
+.handle .ta,.handle .tb{position:absolute;top:0;font:700 11px var(--mono);color:#fff;padding:3px 7px;border-radius:5px;white-space:nowrap}
+.handle .ta{right:10px;background:var(--a)} .handle .tb{left:10px;background:var(--b)}
+.dragging iframe{pointer-events:none}
+@media (max-width:860px){
+  form.urls{grid-template-columns:1fr auto;flex-basis:100%}
+  form.urls .field.b{grid-column:1}
+  form.urls .swap{grid-row:1/3;grid-column:2}
+  form.urls .go{grid-column:1/-1}
+  .pair{flex-direction:column;align-items:center;gap:24px}
+  .stage{padding:16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html"><i><b></b><b></b></i>Fitcheck <span style="font-weight:500;color:var(--muted)">compare</span></a>
+  <form class="urls" id="f">
+    <label class="field a"><span class="tag">A</span><input class="name" id="la" value="Live" aria-label="Name for link A" maxlength="14"><input class="u" id="ua" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Current site, e.g. client.com" aria-label="Link A"></label>
+    <button class="swap" id="swap" type="button" title="Swap A and B" aria-label="Swap A and B"><svg viewBox="0 0 24 24"><path d="M7 4L3 8l4 4"/><path d="M3 8h14"/><path d="M17 20l4-4-4-4"/><path d="M21 16H7"/></svg></button>
+    <label class="field b"><span class="tag">B</span><input class="name" id="lb" value="Staging" aria-label="Name for link B" maxlength="14"><input class="u" id="ub" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="New version, e.g. staging.client.com" aria-label="Link B"></label>
+    <button class="go" type="submit">Compare</button>
+  </form>
+  <button class="btn" id="share" type="button"><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>Share</button>
+</header>
+
+<div class="tools">
+  <div class="seg" id="mode" role="group" aria-label="View">
+    <button type="button" data-m="side">Side by side</button>
+    <button type="button" data-m="swipe">Swipe</button>
+  </div>
+  <div class="seg" id="types" role="group" aria-label="Device type"></div>
+  <select id="device" aria-label="Device"></select>
+  <button class="btn" id="rotate" type="button">Rotate</button>
+  <button class="btn" id="scroll" type="button" aria-pressed="true">Scrolling</button>
+  <button class="btn" id="reload" type="button">Reload both</button>
+  <span class="grow"></span>
+  <button class="link" id="help" type="button">Site not loading?</button>
+</div>
+
+<div class="stage" id="stage"></div>
+
+<script>/*@CORE*/</script>
+<script>
+const $ = s => document.querySelector(s);
+const P = FC.readParams();
+const DEF = {Mobile:"ip17p", Tablet:"ipad", Desktop:"lap1366", TV:"tv1080"};
+const S = {a:P.url, b:FC.normalize(P.get("url2")), la:P.get("la") || "Live", lb:P.get("lb") || "Staging",
+  mode:P.get("mode") === "swipe" ? "swipe" : "side", device:P.device || "ip17p", rot:P.rotate, scrolling:P.scrolling, cut:50};
+if (!P.device && P.width && P.height){ const m = FC.matchSize(P.width, P.height, P.type); if (m){ S.device = m.d.id; S.rot = m.rot; } }
+const stage = $("#stage");
+let A = null, B = null;
+const dev = () => FC.byId(S.device);
+
+function fillTools(){
+  const t = dev().type;
+  $("#types").innerHTML = FC.TYPES.map(x => `<button type="button" data-t="${x}" aria-pressed="${x === t}">${x}</button>`).join("");
+  const list = FC.ofType(t);
+  $("#device").innerHTML = FC.brands(list).map(b => `<optgroup label="${b}">` + list.filter(d => d.brand === b).map(d => `<option value="${d.id}">${d.name} · ${d.w}×${d.h}</option>`).join("") + `</optgroup>`).join("");
+  $("#device").value = S.device;
+  document.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === S.mode)));
+  $("#scroll").setAttribute("aria-pressed", String(S.scrolling));
+  $("#rotate").setAttribute("aria-pressed", String(S.rot));
+}
+function build(){
+  stage.innerHTML = "";
+  A = FC.viewport({url:S.a, scrolling:S.scrolling, label:S.la, emptyText:"Paste link A above"});
+  B = FC.viewport({url:S.b, scrolling:S.scrolling, label:S.lb, emptyText:"Paste link B above to compare"});
+  if (S.mode === "side"){
+    const pair = document.createElement("div"); pair.className = "pair";
+    [["a", A, S.la, S.a], ["b", B, S.lb, S.b]].forEach(([k, v, name, u]) => {
+      const side = document.createElement("div"); side.className = "side " + k;
+      side.innerHTML = `<div class="lab"><span class="tag">${k.toUpperCase()}</span><span></span><small></small><button type="button" data-r="${k}" title="Reload ${k.toUpperCase()}" aria-label="Reload ${k.toUpperCase()}"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button></div>`;
+      side.querySelector(".lab span").textContent = name;
+      side.querySelector(".lab small").textContent = u ? FC.host(u) : "no link";
+      side.appendChild(v.el); pair.appendChild(side);
+    });
+    const meta = document.createElement("div"); meta.className = "meta"; meta.id = "meta";
+    const wrap = document.createElement("div"); wrap.style.cssText = "margin:auto;display:flex;flex-direction:column;gap:14px";
+    wrap.append(pair, meta); stage.appendChild(wrap);
+  } else {
+    const sw = document.createElement("div"); sw.className = "swipe"; sw.id = "swipe";
+    const la = document.createElement("div"); la.className = "layer"; la.appendChild(A.el);
+    const lb = document.createElement("div"); lb.className = "layer top"; lb.appendChild(B.el);
+    const h = document.createElement("div"); h.className = "handle";
+    h.innerHTML = `<span class="ta"></span><span class="tb"></span><button type="button" aria-label="Drag to compare A and B" title="Drag, or use ← →"><svg viewBox="0 0 24 24"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6"/></svg></button>`;
+    h.querySelector(".ta").textContent = "A · " + S.la; h.querySelector(".tb").textContent = "B · " + S.lb;
+    sw.append(la, lb, h);
+    const meta = document.createElement("div"); meta.className = "meta"; meta.id = "meta";
+    const wrap = document.createElement("div"); wrap.style.cssText = "margin:auto;display:flex;flex-direction:column;gap:14px";
+    wrap.append(sw, meta); stage.appendChild(wrap);
+    dragHandle(sw, h.querySelector("button"));
+  }
+  layout();
+}
+function layout(){
+  const d = dev(), r = FC.dims(d, S.rot);
+  const two = S.mode === "side" && innerWidth > 860;
+  const W = (stage.clientWidth - 48 - (two ? 40 : 0)) / (two ? 2 : 1);
+  const H = stage.clientHeight - 48 - 60;
+  const s = FC.fit(W, S.mode === "side" && !two ? 99999 : H, r.w, r.h, d.shape);
+  [A, B].forEach(v => v.set({w:r.w, h:r.h, s:S.mode === "side" && !two ? Math.min(s, .6) : s, shape:d.shape, rot:S.rot}));
+  const sw = $("#swipe");
+  if (sw){ sw.style.width = A.el.offsetWidth + "px"; sw.style.height = A.el.offsetHeight + "px"; sw.style.setProperty("--cut", S.cut + "%"); }
+  const meta = $("#meta"); if (meta) meta.innerHTML = `<b>${d.name}</b> · ${r.w} × ${r.h}${S.rot ? " · landscape" : ""} · ${Math.round(A.state.s * 100)}%`;
+  FC.writeParams({url:S.a, url2:S.b, la:S.la === "Live" ? "" : S.la, lb:S.lb === "Staging" ? "" : S.lb, device:S.device,
+    width:r.w, height:r.h, type:d.type, rotate:S.rot ? true : "", scrolling:S.scrolling, mode:S.mode === "swipe" ? "swipe" : ""});
+}
+function dragHandle(sw, btn){
+  const set = x => { const r = sw.getBoundingClientRect(); S.cut = Math.max(0, Math.min(100, (x - r.left) / r.width * 100)); sw.style.setProperty("--cut", S.cut + "%"); };
+  btn.addEventListener("pointerdown", e => { btn.setPointerCapture(e.pointerId); document.body.classList.add("dragging"); });
+  btn.addEventListener("pointermove", e => { if (btn.hasPointerCapture(e.pointerId)) set(e.clientX); });
+  btn.addEventListener("pointerup", () => document.body.classList.remove("dragging"));
+  btn.addEventListener("keydown", e => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight"){ e.preventDefault(); S.cut = Math.max(0, Math.min(100, S.cut + (e.key === "ArrowLeft" ? -5 : 5))); sw.style.setProperty("--cut", S.cut + "%"); }
+  });
+}
+
+$("#f").addEventListener("submit", e => {
+  e.preventDefault();
+  const a = FC.normalize($("#ua").value), b = FC.normalize($("#ub").value);
+  if (!a && !b){ $("#ua").setCustomValidity("Enter at least one link"); $("#ua").reportValidity(); return; }
+  $("#ua").setCustomValidity("");
+  S.a = a; S.b = b; S.la = $("#la").value.trim() || "A"; S.lb = $("#lb").value.trim() || "B";
+  $("#ua").value = a; $("#ub").value = b; FC.addRecent(a); FC.addRecent(b); build();
+});
+$("#ua").addEventListener("input", e => e.target.setCustomValidity(""));
+$("#swap").addEventListener("click", () => {
+  [S.a, S.b, S.la, S.lb] = [S.b, S.a, S.lb, S.la];
+  $("#ua").value = S.a; $("#ub").value = S.b; $("#la").value = S.la; $("#lb").value = S.lb; build();
+});
+$("#mode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b || b.dataset.m === S.mode) return; S.mode = b.dataset.m; fillTools(); build(); });
+$("#types").addEventListener("click", e => { const b = e.target.closest("[data-t]"); if (!b) return; S.device = DEF[b.dataset.t]; S.rot = false; fillTools(); layout(); });
+$("#device").addEventListener("change", e => { S.device = e.target.value; layout(); });
+$("#rotate").addEventListener("click", () => { S.rot = !S.rot; fillTools(); layout(); });
+$("#scroll").addEventListener("click", () => { S.scrolling = !S.scrolling; A.setScrolling(S.scrolling); B.setScrolling(S.scrolling); fillTools(); layout(); });
+$("#reload").addEventListener("click", () => { A.reload(); B.reload(); });
+stage.addEventListener("click", e => { const b = e.target.closest("[data-r]"); if (b) (b.dataset.r === "a" ? A : B).reload(); });
+$("#share").addEventListener("click", FC.share);
+$("#help").addEventListener("click", FC.help);
+let rt = 0; window.addEventListener("resize", () => { cancelAnimationFrame(rt); rt = requestAnimationFrame(layout); });
+
+$("#ua").value = S.a; $("#ub").value = S.b; $("#la").value = S.la; $("#lb").value = S.lb;
+fillTools(); build();
+FC.designNav(1);
+</script>
+</body>
+</html>

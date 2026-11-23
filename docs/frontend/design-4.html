@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck · Coral Filmstrip</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=DM+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Design 4 · Coral Filmstrip. Warm light. A whole device family in one swipeable row, shown at true relative size. */
+:root{
+  --bg:#FFF8F2; --panel:#FFFFFF; --ink:#2A1D17; --muted:#7A6A60; --line:#F0DFD3; --line-2:#E5CDBD;
+  --accent:#E0532B; --accent-ink:#FFFFFF; --soft:#FDE6DC;
+  --fc-frame:#2B201A; --fc-edge:#4A3A31; --fc-bar-bg:#F6E9DF; --fc-bar-ink:#7A6A60; --fc-load-bg:#FFF4EC; --fc-load-ink:#7A6A60;
+  --fc-shadow:0 26px 50px -30px rgba(90,40,20,.55); --fc-toast-bg:#2A1D17; --fc-dialog-btn:#E0532B;
+  --f:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --mono:"DM Mono",ui-monospace,Consolas,monospace;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-rows:auto auto minmax(0,1fr) auto;background:var(--bg);color:var(--ink);font:15px/1.45 var(--f);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+header{display:flex;align-items:center;gap:16px;padding:16px 24px 10px}
+.logo{display:flex;align-items:baseline;gap:6px;font-weight:700;font-size:22px;letter-spacing:-.03em;color:inherit;text-decoration:none;white-space:nowrap}
+.logo b{color:var(--accent)}
+form.url{flex:1;display:flex;align-items:center;max-width:780px;min-width:0;background:var(--panel);border:1.5px solid var(--line);border-radius:14px;box-shadow:0 8px 24px -18px rgba(90,40,20,.4)}
+form.url:focus-within{border-color:var(--accent)}
+form.url svg{margin-left:14px;color:var(--muted)}
+form.url input{flex:1;min-width:0;border:0;background:none;padding:12px;outline:none}
+form.url button{margin:4px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:9px 20px;cursor:pointer}
+.acts{display:flex;gap:6px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1.5px solid var(--line);background:var(--panel);border-radius:12px;padding:8px 13px;font-weight:600;font-size:14px;cursor:pointer;white-space:nowrap;color:inherit;text-decoration:none}
+.btn:hover{border-color:var(--line-2)}
+.btn[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);color:var(--accent)}
+
+.filters{display:flex;align-items:center;gap:14px;padding:6px 24px 12px;flex-wrap:wrap}
+.groups{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0}
+.groups button{border:0;background:none;border-radius:999px;padding:7px 14px;font-weight:600;cursor:pointer;color:var(--muted);white-space:nowrap}
+.groups button:hover{color:var(--ink)}
+.groups button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.groups button small{font:500 11px var(--mono);opacity:.7;margin-left:5px}
+.seg{display:inline-flex;border:1.5px solid var(--line);border-radius:12px;padding:3px;background:var(--panel)}
+.seg button{border:0;background:none;border-radius:9px;padding:5px 11px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--soft);color:var(--accent)}
+.seg-l{font-size:13px;color:var(--muted)}
+
+.strip{position:relative;overflow-x:auto;overflow-y:hidden;display:flex;align-items:flex-end;gap:40px;padding:10px 24px 18px;scroll-snap-type:x proximity;scroll-padding:24px;
+  background:linear-gradient(transparent calc(100% - 18px),var(--line) calc(100% - 18px),var(--line) calc(100% - 17px),transparent calc(100% - 17px))}
+.strip::after{content:"";flex:0 0 1px}
+.item{scroll-snap-align:start;display:flex;flex-direction:column;align-items:center;gap:10px;flex:none}
+.cap{display:flex;flex-direction:column;align-items:center;gap:1px;text-align:center}
+.cap button{border:0;background:none;font-weight:700;cursor:pointer;padding:2px 6px;border-radius:6px}
+.cap button:hover{color:var(--accent);background:var(--soft)}
+.cap small{font:500 11.5px var(--mono);color:var(--muted)}
+.num{font:500 11px var(--mono);color:var(--accent)}
+.blank{margin:auto;text-align:center;color:var(--muted)}
+
+footer{display:flex;align-items:center;gap:10px;padding:10px 24px 14px;border-top:1px solid var(--line);background:var(--panel);flex-wrap:wrap}
+.arrows{display:flex;gap:4px}
+.arrows button{width:38px;height:38px;border-radius:12px;border:1.5px solid var(--line);background:var(--panel);cursor:pointer;display:grid;place-items:center}
+.arrows button:hover{border-color:var(--accent);color:var(--accent)}
+.count{font-size:14px;color:var(--muted)}
+.count b{color:var(--ink)}
+.grow{flex:1}
+.link{border:0;background:none;color:var(--accent);font-weight:600;cursor:pointer}
+
+.focus{position:fixed;inset:0;z-index:60;background:rgba(42,29,23,.55);backdrop-filter:blur(4px);display:none;grid-template-rows:auto minmax(0,1fr);padding:calc(16px + env(safe-area-inset-top,0px)) 16px calc(16px + env(safe-area-inset-bottom,0px))}
+.focus.on{display:grid}
+.fbar{display:flex;align-items:center;gap:10px;color:#fff;max-width:1100px;width:100%;margin:0 auto 12px}
+.fbar h2{margin:0;font-size:18px}
+.fbar small{font:500 12px var(--mono);opacity:.8}
+.fbar .grow{flex:1}
+.fbar button{border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;border-radius:10px;padding:7px 12px;cursor:pointer;font-weight:600}
+.fstage{display:flex;min-height:0;overflow:auto}
+.fstage > .fc-vp{margin:auto}
+.fc-nav{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
+@media (max-width:720px){
+  header{flex-wrap:wrap;padding:12px 14px 8px} form.url{order:3;flex-basis:100%;max-width:none} .acts .lbl{display:none}
+  .filters,.strip,footer{padding-left:14px;padding-right:14px} .strip{gap:22px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html">fit<b>check</b></a>
+  <form class="url" id="urlForm" role="search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg>
+    <input id="url" type="text" list="recent" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Paste a link to see it on a whole family of devices" aria-label="Website link">
+    <datalist id="recent"></datalist>
+    <button type="submit">Show</button>
+  </form>
+  <div class="acts">
+    <button class="btn" id="share" type="button"><svg viewBox="0 0 24 24"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg><span class="lbl">Share</span></button>
+  </div>
+</header>
+
+<div class="filters">
+  <div class="groups" id="groups" role="group" aria-label="Device family"></div>
+  <span class="seg-l">Size</span>
+  <div class="seg" id="mode" role="group" aria-label="Size mode">
+    <button type="button" data-m="true" title="Every device at the same scale, so you see real size differences">True scale</button>
+    <button type="button" data-m="fill" title="Every device as tall as the row">Fill height</button>
+  </div>
+</div>
+
+<div class="strip" id="strip" tabindex="0" aria-label="Devices"></div>
+
+<footer>
+  <div class="arrows"><button type="button" id="prev" aria-label="Scroll left"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><button type="button" id="next" aria-label="Scroll right"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>
+  <span class="count" id="count"></span>
+  <span class="grow"></span>
+  <button class="btn" id="scroll" type="button" aria-pressed="true">Scrolling</button>
+  <button class="btn" id="rot" type="button" aria-pressed="false">Landscape</button>
+  <button class="btn" id="reload" type="button">Reload all</button>
+  <button class="link" id="help" type="button">Site not loading?</button>
+</footer>
+
+<div class="focus" id="focus" role="dialog" aria-modal="true" aria-labelledby="fTitle">
+  <div class="fbar"><button type="button" id="fPrev" aria-label="Previous device">←</button><div><h2 id="fTitle"></h2><small id="fSize"></small></div><button type="button" id="fNext" aria-label="Next device">→</button><span class="grow"></span><button type="button" id="fClose">Close · Esc</button></div>
+  <div class="fstage" id="fstage"></div>
+</div>
+
+<script>
+/* Fitcheck core: device catalog, URL parameters, device frames, share and help.
+   Shared by all five frontend designs. Each design styles frames through
+   CSS variables: --fc-frame, --fc-edge, --fc-bar-bg, --fc-bar-ink, --fc-load-bg,
+   --fc-load-ink, --fc-shadow, --fc-toast-bg, --fc-toast-ink, --fc-dialog-bg, --fc-dialog-ink. */
+const FC = (() => {
+  // [id, name, width, height, type, shape, brand]  (CSS viewport sizes in px)
+  const RAW = [
+    ["ip17pm","iPhone 17 Pro Max",440,956,"Mobile","island","Apple"],
+    ["ip17p","iPhone 17 Pro",402,874,"Mobile","island","Apple"],
+    ["ipair","iPhone Air",420,912,"Mobile","island","Apple"],
+    ["ip17","iPhone 17",402,874,"Mobile","island","Apple"],
+    ["ip16e","iPhone 16e",390,844,"Mobile","notch","Apple"],
+    ["ip15","iPhone 15",393,852,"Mobile","island","Apple"],
+    ["ipse","iPhone SE",375,667,"Mobile","home","Apple"],
+    ["s25u","Galaxy S25 Ultra",412,891,"Mobile","hole","Samsung"],
+    ["s25p","Galaxy S25+",384,832,"Mobile","hole","Samsung"],
+    ["s25","Galaxy S25",360,780,"Mobile","hole","Samsung"],
+    ["a56","Galaxy A56",384,854,"Mobile","hole","Samsung"],
+    ["flip7","Galaxy Z Flip7",412,1004,"Mobile","hole","Samsung"],
+    ["px10px","Pixel 10 Pro XL",412,921,"Mobile","hole","Google"],
+    ["px10","Pixel 10",412,915,"Mobile","hole","Google"],
+    ["px9a","Pixel 9a",412,892,"Mobile","hole","Google"],
+    ["mi15","Xiaomi 15",393,851,"Mobile","hole","Xiaomi"],
+    ["rn14","Redmi Note 14 Pro",393,873,"Mobile","hole","Xiaomi"],
+    ["op13","OnePlus 13",412,915,"Mobile","hole","OnePlus"],
+    ["findx8","Oppo Find X8 Pro",412,915,"Mobile","hole","Oppo / Vivo"],
+    ["vx200","Vivo X200 Pro",412,915,"Mobile","hole","Oppo / Vivo"],
+    ["mag8p","Honor Magic8 Pro",412,916,"Mobile","hole","Honor"],
+    ["mag7l","Honor Magic7 Lite",400,888,"Mobile","hole","Honor"],
+    ["p70","Huawei Pura 70 Pro",412,915,"Mobile","hole","Huawei"],
+    ["ipmini","iPad mini",744,1133,"Tablet","tablet","Apple"],
+    ["ipad","iPad 11\"",820,1180,"Tablet","tablet","Apple"],
+    ["ipair13","iPad Air 13\"",1024,1366,"Tablet","tablet","Apple"],
+    ["tabs10","Galaxy Tab S10",800,1280,"Tablet","tablet","Samsung"],
+    ["fold7","Galaxy Z Fold7 (open)",884,1104,"Tablet","tablet","Samsung"],
+    ["magv5","Honor Magic V5 (open)",800,868,"Tablet","tablet","Honor"],
+    ["lap1024","Small laptop",1024,600,"Desktop","browser","Laptop"],
+    ["lap1280","Laptop",1280,800,"Desktop","browser","Laptop"],
+    ["lap1366","Laptop HD",1366,768,"Desktop","browser","Laptop"],
+    ["lap1440","Laptop 1440",1440,900,"Desktop","browser","Laptop"],
+    ["fhd","Desktop Full HD",1920,1080,"Desktop","browser","Desktop"],
+    ["qhd","Desktop QHD",2560,1440,"Desktop","browser","Desktop"],
+    ["tv720","TV 720p",1280,720,"TV","tv","TV"],
+    ["tv1080","TV 1080p",1920,1080,"TV","tv","TV"],
+    ["tv4k","TV 4K",3840,2160,"TV","tv","TV"]
+  ];
+  const DEVICES = RAW.map(([id,name,w,h,type,shape,brand]) => ({id,name,w,h,type,shape,brand}));
+  const TYPES = ["Mobile","Tablet","Desktop","TV"];
+  const byId = id => DEVICES.find(d => d.id === id);
+  const ofType = t => DEVICES.filter(d => d.type === t);
+  const brands = list => [...new Set(list.map(d => d.brand))];
+  const PRESETS = [
+    {id:"quick",   name:"Quick check",        ids:["ip17p","s25","ipad","lap1366"]},
+    {id:"iphones", name:"Top iPhones",        ids:["ip17pm","ip17p","ip16e","ipse"]},
+    {id:"android", name:"Android mix",        ids:["s25u","s25","px10","a56","rn14"]},
+    {id:"tablets", name:"Tablets",            ids:["ipmini","ipad","tabs10","fold7"]},
+    {id:"desktop", name:"Laptops & desktops", ids:["lap1024","lap1366","lap1440","fhd"]}
+  ];
+  const BREAKPOINTS = [{n:"sm",w:640},{n:"md",w:768},{n:"lg",w:1024},{n:"xl",w:1280},{n:"2xl",w:1536}];
+
+  function normalize(u){
+    u = (u || "").trim(); if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch { return ""; }
+  }
+  function host(u){ try { return new URL(u).host; } catch { return u || ""; } }
+  const dims = (d, rot) => rot ? {w:d.h, h:d.w} : {w:d.w, h:d.h};
+  const matchType = t => { t = (t||"").toLowerCase(); return [...TYPES,"Custom"].find(x => x.toLowerCase() === t) || ""; };
+
+  /* Query string. Compatible with ?url=&width=&height=&type=&scrolling=yes|no */
+  function readParams(){
+    const q = new URLSearchParams(location.search);
+    const list = (q.get("devices") || "").split(",").filter(byId);
+    return {
+      url: normalize(q.get("url") || ""),
+      width: Math.max(0, parseInt(q.get("width"), 10) || 0),
+      height: Math.max(0, parseInt(q.get("height"), 10) || 0),
+      type: matchType(q.get("type")),
+      scrolling: q.get("scrolling") !== "no",
+      device: byId(q.get("device")) ? q.get("device") : "",
+      devices: list,
+      rotate: q.get("rotate") === "yes",
+      preset: q.get("preset") || "",
+      get: k => q.get(k) || ""
+    };
+  }
+  function writeParams(p){
+    const q = new URLSearchParams();
+    Object.keys(p).forEach(k => {
+      let v = p[k];
+      if (v === true) v = "yes"; else if (v === false) v = "no";
+      if (Array.isArray(v)) v = v.join(",");
+      if (v !== "" && v != null) q.set(k, v);
+    });
+    const s = q.toString();
+    try { history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash); } catch {}
+    return location.href;
+  }
+  /* Find a catalog device by size within a type (either orientation). */
+  function matchSize(w, h, type){
+    const pool = type && type !== "Custom" ? ofType(type) : DEVICES;
+    for (const d of pool){
+      if (d.w === w && d.h === h) return {d, rot:false};
+      if (d.w === h && d.h === w) return {d, rot:true};
+    }
+    return null;
+  }
+
+  /* Scale that fits a device (with its frame) inside a box. */
+  function fit(availW, availH, w, h, shape, max){
+    const bz = shape === "tablet" ? 32 : shape === "tv" ? 24 : (shape === "browser" || shape === "none") ? 0 : 24;
+    const extraH = shape === "browser" ? 30 : shape === "home" ? 46 : shape === "tv" ? 30 : 0;
+    const s = Math.min((availW - bz) / w, (availH - bz - extraH) / h, max == null ? 1 : max);
+    return Math.max(0.05, Math.round(s * 1000) / 1000);
+  }
+
+  /* Device frame + iframe. Changing size or scale never reloads the page. */
+  function viewport(o){
+    const cur = Object.assign({w:400, h:800, s:1, shape:"none", rot:false, url:"", scrolling:true, label:"", emptyText:"Paste a link to preview"}, o);
+    const el = document.createElement("div");
+    const screen = document.createElement("div"); screen.className = "fc-screen";
+    const cut = document.createElement("div"); cut.className = "fc-cut";
+    const load = document.createElement("div"); load.className = "fc-load";
+    const bar = document.createElement("div"); bar.className = "fc-bar";
+    bar.innerHTML = "<i></i><i></i><i></i><span></span>";
+    const btn = document.createElement("div"); btn.className = "fc-homebtn";
+    const stand = document.createElement("div"); stand.className = "fc-stand";
+    screen.append(load, cut);
+    el.append(bar, screen, btn, stand);
+    let iframe = null, timer = 0;
+    function frame(){
+      if (iframe) iframe.remove();
+      clearTimeout(timer);
+      el.classList.remove("fc-loaded");
+      if (!cur.url){ load.textContent = cur.emptyText; iframe = null; return; }
+      load.textContent = "Loading " + host(cur.url) + "…";
+      iframe = document.createElement("iframe");
+      iframe.title = (cur.label || "Preview") + ": " + cur.url;
+      iframe.setAttribute("scrolling", cur.scrolling ? "yes" : "no");
+      if (!cur.scrolling) iframe.style.overflow = "hidden";
+      iframe.addEventListener("load", () => el.classList.add("fc-loaded"));
+      timer = setTimeout(() => el.classList.add("fc-loaded"), 12000);
+      iframe.src = cur.url;
+      screen.prepend(iframe);
+    }
+    function apply(){
+      el.className = "fc-vp fc-" + cur.shape + (cur.rot ? " fc-rot" : "") + (el.classList.contains("fc-loaded") ? " fc-loaded" : "");
+      el.style.setProperty("--w", cur.w);
+      el.style.setProperty("--h", cur.h);
+      el.style.setProperty("--s", cur.s);
+      bar.querySelector("span").textContent = cur.url ? host(cur.url) : "fitcheck";
+    }
+    apply(); frame();
+    return {
+      el,
+      set(p){ Object.assign(cur, p); apply(); return this; },
+      setUrl(u){ if (u === cur.url) return this; cur.url = u; frame(); apply(); return this; },
+      setScrolling(b){ if (b === cur.scrolling) return this; cur.scrolling = b; frame(); return this; },
+      reload(){ frame(); return this; },
+      get state(){ return Object.assign({}, cur); }
+    };
+  }
+
+  async function copy(text){
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch {
+      const t = document.createElement("textarea"); t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select();
+      let ok = false; try { ok = document.execCommand("copy"); } catch {}
+      t.remove(); return ok;
+    }
+  }
+  let toastEl = null, toastT = 0;
+  function toast(msg){
+    if (!toastEl){ toastEl = document.createElement("div"); toastEl.className = "fc-toast"; toastEl.setAttribute("role","status"); document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 2200);
+  }
+  async function share(){ const ok = await copy(location.href); toast(ok ? "Link copied. Anyone with it sees this exact view." : "Copy failed. Copy the address bar instead."); }
+
+  const RECENT_KEY = "fitcheck-recent";
+  function recent(){ try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]").slice(0, 8); } catch { return []; } }
+  function addRecent(u){ if (!u) return; try { const r = [u, ...recent().filter(x => x !== u)].slice(0, 8); localStorage.setItem(RECENT_KEY, JSON.stringify(r)); } catch {} }
+
+  let dlg = null;
+  function help(){
+    if (!dlg){
+      dlg = document.createElement("dialog"); dlg.className = "fc-dialog";
+      dlg.innerHTML = `<h2>Site not loading?</h2>
+        <p>Fitcheck shows the site inside a frame, the same way every online responsive tester does. A blank or grey screen usually means one of these:</p>
+        <ul>
+          <li><b>The site blocks framing.</b> It sends <code>X-Frame-Options: DENY</code> or a <code>Content-Security-Policy</code> with <code>frame-ancestors</code>. Banks, Google and many login pages do this. To test your own site, allow this tester's domain in <code>frame-ancestors</code> on a staging server.</li>
+          <li><b>The link is http:// on an https:// page.</b> Browsers block mixed content. Use the https:// address.</li>
+          <li><b>The site needs a login or cookie consent.</b> Third-party cookies are often blocked inside frames. Unlock and sign in inside the frame, or test a public page.</li>
+          <li><b>Local addresses.</b> <code>localhost</code> links only work on the computer running that site.</li>
+        </ul>
+        <p>Sizes are CSS pixels, the width a browser reports to the page. They match what the phone's browser uses for media queries.</p>
+        <form method="dialog"><button class="fc-dialog-close">Got it</button></form>`;
+      document.body.appendChild(dlg);
+      dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+    }
+    dlg.showModal();
+  }
+
+  /* Small switcher between the five designs; keeps the current query string. */
+  function designNav(n){
+    const names = ["Split Compare","Showcase","QA Checklist","Coral Filmstrip","Breakpoint Strip"];
+    const file = i => `design-${i}.html`;
+    let hidden = false; try { hidden = sessionStorage.getItem("fc-nav-hidden") === "1"; } catch {}
+    if (hidden) return;
+    const nav = document.createElement("nav"); nav.className = "fc-nav"; nav.setAttribute("aria-label","Design options");
+    const q = () => location.search;
+    nav.innerHTML = `<a class="fc-nav-all" href="index.html">All designs</a>` +
+      names.map((nm, i) => `<a href="${file(i+1)}" data-i="${i+1}" title="${nm}"${i+1===n?' aria-current="page"':''}>${i+1}</a>`).join("") +
+      `<button type="button" aria-label="Hide design switcher">×</button>`;
+    nav.addEventListener("click", e => {
+      const a = e.target.closest("a[data-i]");
+      if (a){ e.preventDefault(); location.href = a.getAttribute("href") + (FC.carry ? FC.carry() : q()); }
+      if (e.target.closest("button")){ nav.remove(); try { sessionStorage.setItem("fc-nav-hidden","1"); } catch {} }
+    });
+    document.body.appendChild(nav);
+  }
+
+  const css = `
+[hidden]{display:none!important}
+.fc-vp{--s:1;--w:400;--h:800;--bz:12;--rad:44;--k:clamp(.45,var(--s),1);position:relative;flex:none;display:inline-flex;flex-direction:column;align-items:center;
+  background:var(--fc-frame,#1D2129);border:1px solid var(--fc-edge,#3A404A);padding:calc(var(--bz)*var(--k)*1px);
+  border-radius:calc((var(--rad)*var(--s) + var(--bz)*var(--k))*1px);box-shadow:var(--fc-shadow,0 24px 50px -28px rgba(10,20,40,.55))}
+.fc-vp.fc-home{--rad:4;padding-block:calc(46px*var(--k)) calc(10px*var(--k))}
+.fc-vp.fc-home.fc-rot{padding-block:calc(12px*var(--k));padding-inline:calc(46px*var(--k)) calc(46px*var(--k))}
+.fc-vp.fc-tablet{--bz:16;--rad:16}
+.fc-vp.fc-tv{--bz:12;--rad:2;border-radius:6px;margin-bottom:calc(30px*var(--k))}
+.fc-vp.fc-browser{--bz:0;--rad:0;padding:0;border-radius:10px;overflow:hidden;background:var(--fc-bar-bg,#E9EDF2)}
+.fc-vp.fc-none{--bz:0;--rad:0;padding:0;border-radius:0;background:transparent;border:1px solid var(--fc-edge,#3A404A);box-shadow:none}
+.fc-screen{position:relative;overflow:hidden;background:#fff;width:calc(var(--w)*var(--s)*1px);height:calc(var(--h)*var(--s)*1px);border-radius:calc(var(--rad)*var(--s)*1px)}
+.fc-screen iframe{position:absolute;left:0;top:0;border:0;display:block;background:#fff;width:calc(var(--w)*1px);height:calc(var(--h)*1px);transform:scale(var(--s));transform-origin:0 0}
+.fc-load{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:12px;background:var(--fc-load-bg,#F4F6F9);color:var(--fc-load-ink,#5C6978);font:600 13px/1.4 system-ui,sans-serif;z-index:1;transition:opacity .35s}
+.fc-loaded .fc-load{opacity:0;pointer-events:none}
+.fc-cut{display:none;position:absolute;z-index:2;pointer-events:none;background:#000;left:50%;transform:translateX(-50%)}
+.fc-island .fc-cut{display:block;top:calc(11px*var(--s));width:calc(125px*var(--s));height:calc(36px*var(--s));border-radius:999px}
+.fc-notch .fc-cut{display:block;top:0;width:calc(160px*var(--s));height:calc(32px*var(--s));border-radius:0 0 calc(18px*var(--s)) calc(18px*var(--s))}
+.fc-hole .fc-cut{display:block;top:calc(12px*var(--s));width:calc(12px*var(--s));height:calc(12px*var(--s));border-radius:50%}
+.fc-rot.fc-island .fc-cut{top:50%;left:calc(11px*var(--s));transform:translateY(-50%);width:calc(36px*var(--s));height:calc(125px*var(--s))}
+.fc-rot.fc-notch .fc-cut{top:50%;left:0;transform:translateY(-50%);width:calc(32px*var(--s));height:calc(160px*var(--s));border-radius:0 calc(18px*var(--s)) calc(18px*var(--s)) 0}
+.fc-rot.fc-hole .fc-cut{top:50%;left:calc(12px*var(--s));transform:translateY(-50%)}
+.fc-bar{display:none;align-items:center;gap:6px;width:100%;height:30px;padding:0 12px;background:var(--fc-bar-bg,#E9EDF2);color:var(--fc-bar-ink,#5C6978);font:12px/1 system-ui,sans-serif;box-sizing:border-box}
+.fc-browser .fc-bar{display:flex}
+.fc-bar i{width:9px;height:9px;border-radius:50%;background:currentColor;opacity:.35;flex:none}
+.fc-bar span{margin-left:8px;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;background:var(--fc-bar-field,rgba(255,255,255,.6));border-radius:6px;padding:4px 8px}
+.fc-homebtn{display:none;position:absolute;bottom:calc(8px*var(--k));left:50%;transform:translateX(-50%);width:calc(30px*var(--k));height:calc(30px*var(--k));border-radius:50%;border:2px solid var(--fc-edge,#3A404A);box-sizing:border-box}
+.fc-home .fc-homebtn{display:block}
+.fc-home.fc-rot .fc-homebtn{bottom:auto;top:50%;left:auto;right:calc(8px*var(--k));transform:translateY(-50%)}
+.fc-stand{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);width:28%;height:calc(30px*var(--k));background:linear-gradient(var(--fc-edge,#3A404A),var(--fc-frame,#1D2129));clip-path:polygon(38% 0,62% 0,100% 100%,0 100%)}
+.fc-tv .fc-stand{display:block}
+.fc-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:100;
+  background:var(--fc-toast-bg,#17202B);color:var(--fc-toast-ink,#fff);padding:10px 16px;border-radius:10px;font:600 14px/1.3 system-ui,sans-serif;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px)}
+.fc-toast.on{opacity:1;transform:translate(-50%,0)}
+.fc-dialog{max-width:560px;width:calc(100vw - 32px);border:0;border-radius:14px;padding:24px 26px;background:var(--fc-dialog-bg,#fff);color:var(--fc-dialog-ink,#17202B);font:15px/1.55 system-ui,sans-serif;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+.fc-dialog::backdrop{background:rgba(10,14,20,.5)}
+.fc-dialog h2{margin:0 0 8px;font-size:20px}
+.fc-dialog ul{padding-left:18px;display:grid;gap:8px}
+.fc-dialog code{font-size:.85em;background:rgba(127,127,127,.18);padding:1px 5px;border-radius:4px}
+.fc-dialog-close{margin-top:6px;border:0;border-radius:8px;padding:9px 16px;font:700 14px system-ui,sans-serif;cursor:pointer;background:var(--fc-dialog-btn,#2F5BEA);color:var(--fc-dialog-btn-ink,#fff)}
+.fc-nav{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:90;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;
+  background:rgba(23,32,43,.88);backdrop-filter:blur(6px);box-shadow:0 8px 24px -10px rgba(0,0,0,.5);font:600 12px/1 system-ui,sans-serif}
+.fc-nav a,.fc-nav button{color:#D6DEE7;text-decoration:none;border:0;background:none;cursor:pointer;padding:6px 9px;border-radius:999px;font:inherit}
+.fc-nav a[aria-current]{background:#fff;color:#17202B}
+.fc-nav a:hover,.fc-nav button:hover{background:rgba(255,255,255,.14)}
+.fc-nav .fc-nav-all{padding-inline:11px}
+@media (prefers-reduced-motion:reduce){.fc-load,.fc-toast{transition:none}}
+`;
+  const st = document.createElement("style"); st.id = "fc-core"; st.textContent = css;
+  document.head.prepend(st);
+
+  return {DEVICES, TYPES, PRESETS, BREAKPOINTS, byId, ofType, brands, normalize, host, dims, matchType, matchSize,
+          readParams, writeParams, fit, viewport, copy, toast, share, recent, addRecent, help, designNav, carry:null};
+})();
+
+</script>
+<script>
+const $ = s => document.querySelector(s);
+const GROUPS = [
+  {id:"popular", name:"Popular", ids:["ip17pm","ip17p","ip16e","ipse","s25u","s25","px10","a56","rn14"]},
+  {id:"apple", name:"iPhone", f:d => d.type === "Mobile" && d.brand === "Apple"},
+  {id:"samsung", name:"Galaxy", f:d => d.type === "Mobile" && d.brand === "Samsung"},
+  {id:"google", name:"Pixel", f:d => d.type === "Mobile" && d.brand === "Google"},
+  {id:"android", name:"More Android", f:d => d.type === "Mobile" && !["Apple","Samsung","Google"].includes(d.brand)},
+  {id:"tablet", name:"Tablets", f:d => d.type === "Tablet"},
+  {id:"desktop", name:"Laptops & desktops", f:d => d.type === "Desktop"},
+  {id:"tv", name:"TV", f:d => d.type === "TV"}
+];
+const listOf = g => g.ids ? g.ids.map(FC.byId) : FC.DEVICES.filter(g.f);
+const P = FC.readParams();
+const S = {url:P.url, group:GROUPS.some(g => g.id === P.get("group")) ? P.get("group") : "popular",
+           mode:P.get("size") === "fill" ? "fill" : "true", scrolling:P.scrolling, rot:P.rotate, focus:-1};
+const strip = $("#strip");
+let vps = [], fvp = null;
+
+function shown(){ return listOf(GROUPS.find(g => g.id === S.group)); }
+function renderGroups(){
+  $("#groups").innerHTML = GROUPS.map(g => `<button type="button" data-g="${g.id}" aria-pressed="${g.id === S.group}">${g.name}<small>${listOf(g).length}</small></button>`).join("");
+  document.querySelectorAll("#mode button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.m === S.mode)));
+}
+function build(){
+  strip.innerHTML = ""; vps = [];
+  shown().forEach((d, i) => {
+    const it = document.createElement("div"); it.className = "item";
+    const v = FC.viewport({url:S.url, scrolling:S.scrolling, label:d.name, lazy:true, emptyText:"Paste a link above"});
+    it.innerHTML = `<div class="cap"><span class="num">${String(i + 1).padStart(2, "0")}</span><button type="button" data-i="${i}" title="Open ${d.name} large">${d.name}</button><small></small></div>`;
+    it.appendChild(v.el);
+    strip.appendChild(it); vps.push({d, v, it});
+  });
+  layout();
+}
+function layout(){
+  const H = strip.clientHeight - 28 - 62;
+  const items = vps.map(x => Object.assign(x, FC.dims(x.d, S.rot)));
+  const maxH = Math.max(...items.map(x => x.h + (x.d.shape === "browser" ? 30 : 0)));
+  items.forEach(x => {
+    const s = S.mode === "true" ? Math.min(1, (H - 30) / maxH) : FC.fit(99999, H, x.w, x.h, x.d.shape);
+    x.v.set({w:x.w, h:x.h, s:Math.max(.05, s), shape:x.d.shape, rot:S.rot});
+    x.it.querySelector("small").textContent = `${x.w} × ${x.h}`;
+  });
+  $("#count").innerHTML = `<b>${items.length} devices</b> · ${S.mode === "true" ? "same scale" : "same height"}${S.rot ? " · landscape" : ""}`;
+  $("#rot").setAttribute("aria-pressed", String(S.rot));
+  $("#scroll").setAttribute("aria-pressed", String(S.scrolling));
+  FC.writeParams({url:S.url, group:S.group === "popular" ? "" : S.group, size:S.mode === "fill" ? "fill" : "", scrolling:S.scrolling, rotate:S.rot ? true : ""});
+}
+
+/* Focus view */
+function openFocus(i){
+  S.focus = (i + vps.length) % vps.length;
+  const x = vps[S.focus], r = FC.dims(x.d, S.rot);
+  $("#fTitle").textContent = x.d.name; $("#fSize").textContent = `${r.w} × ${r.h} · ${x.d.type}`;
+  const st = $("#fstage"); st.innerHTML = "";
+  $("#focus").classList.add("on");
+  fvp = FC.viewport({url:S.url, scrolling:S.scrolling, label:x.d.name});
+  st.appendChild(fvp.el);
+  fvp.set({w:r.w, h:r.h, s:FC.fit(st.clientWidth - 20, st.clientHeight - 20, r.w, r.h, x.d.shape), shape:x.d.shape, rot:S.rot});
+  $("#fClose").focus();
+}
+function closeFocus(){ $("#focus").classList.remove("on"); $("#fstage").innerHTML = ""; fvp = null; const b = strip.querySelector(`[data-i="${S.focus}"]`); b && b.focus(); S.focus = -1; }
+strip.addEventListener("click", e => { const b = e.target.closest("[data-i]"); if (b) openFocus(+b.dataset.i); });
+$("#fClose").addEventListener("click", closeFocus);
+$("#fPrev").addEventListener("click", () => openFocus(S.focus - 1));
+$("#fNext").addEventListener("click", () => openFocus(S.focus + 1));
+$("#focus").addEventListener("click", e => { if (e.target.id === "focus" || e.target.id === "fstage") closeFocus(); });
+
+/* Controls */
+$("#groups").addEventListener("click", e => { const b = e.target.closest("[data-g]"); if (!b) return; S.group = b.dataset.g; renderGroups(); build(); strip.scrollLeft = 0; });
+$("#mode").addEventListener("click", e => { const b = e.target.closest("[data-m]"); if (!b) return; S.mode = b.dataset.m; renderGroups(); layout(); });
+$("#prev").addEventListener("click", () => strip.scrollBy({left:-strip.clientWidth * .8, behavior:"smooth"}));
+$("#next").addEventListener("click", () => strip.scrollBy({left:strip.clientWidth * .8, behavior:"smooth"}));
+strip.addEventListener("wheel", e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX) && !e.target.closest("iframe") && e.target === strip){ strip.scrollLeft += e.deltaY; e.preventDefault(); } }, {passive:false});
+$("#scroll").addEventListener("click", () => { S.scrolling = !S.scrolling; vps.forEach(x => x.v.setScrolling(S.scrolling)); layout(); });
+$("#rot").addEventListener("click", () => { S.rot = !S.rot; layout(); });
+$("#reload").addEventListener("click", () => vps.forEach(x => x.v.reload()));
+$("#share").addEventListener("click", FC.share);
+$("#help").addEventListener("click", FC.help);
+$("#urlForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const u = FC.normalize($("#url").value);
+  if (!u){ $("#url").setCustomValidity("Enter a link like example.com"); $("#url").reportValidity(); return; }
+  $("#url").setCustomValidity(""); $("#url").value = u; S.url = u; FC.addRecent(u); fillRecent();
+  vps.forEach(x => x.v.setUrl(u)); layout();
+});
+$("#url").addEventListener("input", e => e.target.setCustomValidity(""));
+function fillRecent(){ $("#recent").innerHTML = FC.recent().map(u => `<option value="${u.replace(/"/g, "&quot;")}"></option>`).join(""); }
+document.addEventListener("keydown", e => {
+  if (S.focus >= 0){
+    if (e.key === "Escape") closeFocus();
+    if (e.key === "ArrowLeft") openFocus(S.focus - 1);
+    if (e.key === "ArrowRight") openFocus(S.focus + 1);
+    return;
+  }
+  if (e.target.closest("input")) return;
+  if (e.key === "ArrowLeft") $("#prev").click();
+  if (e.key === "ArrowRight") $("#next").click();
+});
+let rt = 0; window.addEventListener("resize", () => { cancelAnimationFrame(rt); rt = requestAnimationFrame(layout); });
+
+$("#url").value = S.url; fillRecent();
+renderGroups(); build();
+FC.designNav(4);
+</script>
+</body>
+</html>

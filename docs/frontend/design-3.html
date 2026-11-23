@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck · QA Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Design 3 · QA Checklist. Light lavender. Work through a queue of devices, mark each check Pass or Issue, export a report. */
+:root{
+  --bg:#F7F5FF; --panel:#FFFFFF; --ink:#1F1A3A; --muted:#6E6890; --line:#E2DEF5; --line-2:#CFC8EE;
+  --accent:#5B3FE0; --accent-ink:#FFFFFF; --soft:#ECE8FF;
+  --ok:#1A8A5A; --ok-soft:#DDF3E8; --bad:#D23F57; --bad-soft:#FBE3E7; --part:#C98A12; --part-soft:#FBF0D6;
+  --fc-frame:#221C3D; --fc-edge:#3D3563; --fc-bar-bg:#EEEAFB; --fc-bar-ink:#6E6890; --fc-load-bg:#F7F5FF; --fc-load-ink:#6E6890;
+  --fc-shadow:0 26px 50px -30px rgba(40,25,110,.5); --fc-toast-bg:#1F1A3A; --fc-dialog-btn:#5B3FE0;
+  --f:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --d:"Outfit","Figtree",system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-rows:auto minmax(0,1fr);background:var(--bg);color:var(--ink);font:14.5px/1.45 var(--f);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+header{display:flex;align-items:center;gap:14px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:9px;font:700 18px var(--d);letter-spacing:-.02em;color:inherit;text-decoration:none;white-space:nowrap}
+.logo i{width:22px;height:22px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:#fff}
+.logo i svg{width:13px;height:13px;stroke-width:3}
+form.url{flex:1;max-width:620px;min-width:220px;display:flex;border:1.5px solid var(--line);border-radius:999px;background:var(--bg)}
+form.url:focus-within{border-color:var(--accent);background:var(--panel)}
+form.url input{flex:1;min-width:0;border:0;background:none;padding:9px 16px;outline:none}
+form.url button{margin:3px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:6px 16px;cursor:pointer}
+.prog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);white-space:nowrap}
+.prog .track{width:130px;height:8px;border-radius:999px;background:var(--soft);overflow:hidden;display:flex}
+.prog .track i{height:100%}
+.prog b{color:var(--ink)}
+.acts{display:flex;gap:6px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 13px;font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap;color:inherit;text-decoration:none}
+.btn:hover{border-color:var(--line-2)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.menu{position:relative}
+.menu .pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;min-width:210px;box-shadow:0 20px 40px -20px rgba(40,25,110,.4);z-index:30}
+.menu .pop button{display:flex;width:100%;border:0;background:none;text-align:left;padding:8px 10px;border-radius:9px;cursor:pointer;gap:8px;align-items:center}
+.menu .pop button:hover{background:var(--bg)}
+
+main{display:grid;grid-template-columns:250px minmax(0,1fr) 340px;min-height:0}
+aside{background:var(--panel);overflow-y:auto;min-height:0}
+#queue{border-right:1px solid var(--line);padding:14px}
+#check{border-left:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:14px}
+.h{font:600 12px var(--d);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+select.full{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel);cursor:pointer}
+.q{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:4px}
+.q button.it{display:grid;grid-template-columns:22px 1fr auto;gap:9px;align-items:center;width:100%;border:1px solid transparent;background:none;text-align:left;padding:8px;border-radius:11px;cursor:pointer}
+.q button.it:hover{background:var(--bg)}
+.q button.it[aria-current="true"]{background:var(--soft);border-color:var(--line-2)}
+.q small{color:var(--muted);font-size:12px;display:block}
+.q .x{opacity:0;border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:6px}
+.q li:hover .x,.q .x:focus-visible{opacity:1}
+.q li{position:relative}
+.q li .x{position:absolute;right:6px;top:50%;transform:translateY(-50%)}
+.st{width:20px;height:20px;border-radius:50%;border:2px solid var(--line-2);display:grid;place-items:center}
+.st svg{width:11px;height:11px;stroke-width:3.4}
+.st.pass{background:var(--ok);border-color:var(--ok);color:#fff}
+.st.issue{background:var(--bad);border-color:var(--bad);color:#fff}
+.st.part{border-color:var(--part);background:conic-gradient(var(--part) var(--p,50%),transparent 0)}
+.addrow{margin-top:10px}
+
+.center{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0}
+.cbar{display:flex;align-items:center;gap:8px;padding:10px 16px;flex-wrap:wrap}
+.cbar h2{margin:0;font:600 18px var(--d);letter-spacing:-.01em}
+.cbar small{color:var(--muted)}
+.cbar .grow{flex:1}
+.stage{overflow:auto;display:flex;padding:8px 20px 24px}
+.stage > .fc-vp{margin:auto}
+
+.cl{display:grid;gap:8px}
+.ci{border:1px solid var(--line);border-radius:14px;padding:11px 12px;display:grid;gap:8px;background:var(--panel)}
+.ci.pass{border-color:#BFE5D1;background:linear-gradient(var(--ok-soft),var(--panel) 70%)}
+.ci.issue{border-color:#F2C4CC;background:linear-gradient(var(--bad-soft),var(--panel) 70%)}
+.ci .t{font-weight:600}
+.ci .d{font-size:12.5px;color:var(--muted);margin-top:1px}
+.pf{display:flex;gap:6px}
+.pf button{flex:1;display:inline-flex;justify-content:center;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:6px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.pf button[data-v="pass"][aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.pf button[data-v="fail"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+textarea{width:100%;min-height:84px;resize:vertical;border:1.5px solid var(--line);border-radius:12px;padding:10px;outline:none;background:var(--panel)}
+textarea:focus{border-color:var(--accent)}
+.nav{display:flex;gap:8px;margin-top:auto;padding-top:6px}
+.nav .btn{flex:1;justify-content:center;padding:10px}
+.done{border-radius:14px;background:var(--ok-soft);color:#11603F;padding:12px 14px;font-weight:600}
+.done.issues{background:var(--bad-soft);color:#97243A}
+.mini{display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:1180px){ main{grid-template-columns:220px minmax(0,1fr) 300px} }
+@media (max-width:900px){
+  body{grid-template-rows:auto auto}
+  html,body{height:auto}
+  main{grid-template-columns:1fr}
+  #queue,#check{border:0;border-bottom:1px solid var(--line)}
+  .stage{min-height:70vh}
+  .prog .track{width:80px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html"><i><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></i>Fitcheck QA</a>
+  <form class="url" id="f" role="search"><input id="u" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Link to test" aria-label="Website link"><button type="submit">Start</button></form>
+  <div class="prog" aria-live="polite"><span class="track" id="track"></span><span id="progTxt"></span></div>
+  <div class="acts">
+    <button class="btn" id="share" type="button">Share</button>
+    <div class="menu">
+      <button class="btn pri" id="exportBtn" type="button" aria-expanded="false" aria-controls="pop">Export report</button>
+      <div class="pop" id="pop" hidden>
+        <button type="button" data-x="copy">Copy as text</button>
+        <button type="button" data-x="csv">Download CSV</button>
+        <button type="button" data-x="json">Download JSON</button>
+        <button type="button" data-x="reset" style="color:var(--bad)">Clear all results</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <aside id="queue" aria-label="Devices to test">
+    <p class="h">Device set</p>
+    <select class="full" id="preset" aria-label="Device set"></select>
+    <ul class="q" id="q"></ul>
+    <div class="addrow"><select class="full" id="add" aria-label="Add a device"></select></div>
+  </aside>
+
+  <section class="center" aria-label="Preview">
+    <div class="cbar">
+      <h2 id="dName"></h2><small id="dSize"></small>
+      <span class="grow"></span>
+      <button class="btn" id="rot" type="button">Rotate</button>
+      <button class="btn" id="scroll" type="button" aria-pressed="true">Scrolling</button>
+      <button class="btn" id="reload" type="button">Reload</button>
+      <button class="btn" id="help" type="button">Not loading?</button>
+    </div>
+    <div class="stage" id="stage"></div>
+  </section>
+
+  <aside id="check" aria-label="Checklist">
+    <div>
+      <p class="h">Checklist for this device</p>
+      <div class="mini"><button class="btn" id="allPass" type="button">Mark all pass</button><button class="btn" id="clearDev" type="button">Clear</button></div>
+    </div>
+    <div class="cl" id="cl"></div>
+    <div>
+      <p class="h">Notes</p>
+      <textarea id="note" placeholder="What's wrong, where, and how to reproduce. E.g. “Menu button hidden under cookie banner on the home page.”" aria-label="Notes for this device"></textarea>
+    </div>
+    <div id="doneBox"></div>
+    <div class="nav"><button class="btn" id="prev" type="button">← Previous</button><button class="btn pri" id="next" type="button">Next device →</button></div>
+  </aside>
+</main>
+
+<script>
+/* Fitcheck core: device catalog, URL parameters, device frames, share and help.
+   Shared by all five frontend designs. Each design styles frames through
+   CSS variables: --fc-frame, --fc-edge, --fc-bar-bg, --fc-bar-ink, --fc-load-bg,
+   --fc-load-ink, --fc-shadow, --fc-toast-bg, --fc-toast-ink, --fc-dialog-bg, --fc-dialog-ink. */
+const FC = (() => {
+  // [id, name, width, height, type, shape, brand]  (CSS viewport sizes in px)
+  const RAW = [
+    ["ip17pm","iPhone 17 Pro Max",440,956,"Mobile","island","Apple"],
+    ["ip17p","iPhone 17 Pro",402,874,"Mobile","island","Apple"],
+    ["ipair","iPhone Air",420,912,"Mobile","island","Apple"],
+    ["ip17","iPhone 17",402,874,"Mobile","island","Apple"],
+    ["ip16e","iPhone 16e",390,844,"Mobile","notch","Apple"],
+    ["ip15","iPhone 15",393,852,"Mobile","island","Apple"],
+    ["ipse","iPhone SE",375,667,"Mobile","home","Apple"],
+    ["s25u","Galaxy S25 Ultra",412,891,"Mobile","hole","Samsung"],
+    ["s25p","Galaxy S25+",384,832,"Mobile","hole","Samsung"],
+    ["s25","Galaxy S25",360,780,"Mobile","hole","Samsung"],
+    ["a56","Galaxy A56",384,854,"Mobile","hole","Samsung"],
+    ["flip7","Galaxy Z Flip7",412,1004,"Mobile","hole","Samsung"],
+    ["px10px","Pixel 10 Pro XL",412,921,"Mobile","hole","Google"],
+    ["px10","Pixel 10",412,915,"Mobile","hole","Google"],
+    ["px9a","Pixel 9a",412,892,"Mobile","hole","Google"],
+    ["mi15","Xiaomi 15",393,851,"Mobile","hole","Xiaomi"],
+    ["rn14","Redmi Note 14 Pro",393,873,"Mobile","hole","Xiaomi"],
+    ["op13","OnePlus 13",412,915,"Mobile","hole","OnePlus"],
+    ["findx8","Oppo Find X8 Pro",412,915,"Mobile","hole","Oppo / Vivo"],
+    ["vx200","Vivo X200 Pro",412,915,"Mobile","hole","Oppo / Vivo"],
+    ["mag8p","Honor Magic8 Pro",412,916,"Mobile","hole","Honor"],
+    ["mag7l","Honor Magic7 Lite",400,888,"Mobile","hole","Honor"],
+    ["p70","Huawei Pura 70 Pro",412,915,"Mobile","hole","Huawei"],
+    ["ipmini","iPad mini",744,1133,"Tablet","tablet","Apple"],
+    ["ipad","iPad 11\"",820,1180,"Tablet","tablet","Apple"],
+    ["ipair13","iPad Air 13\"",1024,1366,"Tablet","tablet","Apple"],
+    ["tabs10","Galaxy Tab S10",800,1280,"Tablet","tablet","Samsung"],
+    ["fold7","Galaxy Z Fold7 (open)",884,1104,"Tablet","tablet","Samsung"],
+    ["magv5","Honor Magic V5 (open)",800,868,"Tablet","tablet","Honor"],
+    ["lap1024","Small laptop",1024,600,"Desktop","browser","Laptop"],
+    ["lap1280","Laptop",1280,800,"Desktop","browser","Laptop"],
+    ["lap1366","Laptop HD",1366,768,"Desktop","browser","Laptop"],
+    ["lap1440","Laptop 1440",1440,900,"Desktop","browser","Laptop"],
+    ["fhd","Desktop Full HD",1920,1080,"Desktop","browser","Desktop"],
+    ["qhd","Desktop QHD",2560,1440,"Desktop","browser","Desktop"],
+    ["tv720","TV 720p",1280,720,"TV","tv","TV"],
+    ["tv1080","TV 1080p",1920,1080,"TV","tv","TV"],
+    ["tv4k","TV 4K",3840,2160,"TV","tv","TV"]
+  ];
+  const DEVICES = RAW.map(([id,name,w,h,type,shape,brand]) => ({id,name,w,h,type,shape,brand}));
+  const TYPES = ["Mobile","Tablet","Desktop","TV"];
+  const byId = id => DEVICES.find(d => d.id === id);
+  const ofType = t => DEVICES.filter(d => d.type === t);
+  const brands = list => [...new Set(list.map(d => d.brand))];
+  const PRESETS = [
+    {id:"quick",   name:"Quick check",        ids:["ip17p","s25","ipad","lap1366"]},
+    {id:"iphones", name:"Top iPhones",        ids:["ip17pm","ip17p","ip16e","ipse"]},
+    {id:"android", name:"Android mix",        ids:["s25u","s25","px10","a56","rn14"]},
+    {id:"tablets", name:"Tablets",            ids:["ipmini","ipad","tabs10","fold7"]},
+    {id:"desktop", name:"Laptops & desktops", ids:["lap1024","lap1366","lap1440","fhd"]}
+  ];
+  const BREAKPOINTS = [{n:"sm",w:640},{n:"md",w:768},{n:"lg",w:1024},{n:"xl",w:1280},{n:"2xl",w:1536}];
+
+  function normalize(u){
+    u = (u || "").trim(); if (!u) return "";
+    if (!/^https?:\/\//i.test(u)) u = "https://" + u;
+    try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.href : ""; } catch { return ""; }
+  }
+  function host(u){ try { return new URL(u).host; } catch { return u || ""; } }
+  const dims = (d, rot) => rot ? {w:d.h, h:d.w} : {w:d.w, h:d.h};
+  const matchType = t => { t = (t||"").toLowerCase(); return [...TYPES,"Custom"].find(x => x.toLowerCase() === t) || ""; };
+
+  /* Query string. Compatible with ?url=&width=&height=&type=&scrolling=yes|no */
+  function readParams(){
+    const q = new URLSearchParams(location.search);
+    const list = (q.get("devices") || "").split(",").filter(byId);
+    return {
+      url: normalize(q.get("url") || ""),
+      width: Math.max(0, parseInt(q.get("width"), 10) || 0),
+      height: Math.max(0, parseInt(q.get("height"), 10) || 0),
+      type: matchType(q.get("type")),
+      scrolling: q.get("scrolling") !== "no",
+      device: byId(q.get("device")) ? q.get("device") : "",
+      devices: list,
+      rotate: q.get("rotate") === "yes",
+      preset: q.get("preset") || "",
+      get: k => q.get(k) || ""
+    };
+  }
+  function writeParams(p){
+    const q = new URLSearchParams();
+    Object.keys(p).forEach(k => {
+      let v = p[k];
+      if (v === true) v = "yes"; else if (v === false) v = "no";
+      if (Array.isArray(v)) v = v.join(",");
+      if (v !== "" && v != null) q.set(k, v);
+    });
+    const s = q.toString();
+    try { history.replaceState(null, "", location.pathname + (s ? "?" + s : "") + location.hash); } catch {}
+    return location.href;
+  }
+  /* Find a catalog device by size within a type (either orientation). */
+  function matchSize(w, h, type){
+    const pool = type && type !== "Custom" ? ofType(type) : DEVICES;
+    for (const d of pool){
+      if (d.w === w && d.h === h) return {d, rot:false};
+      if (d.w === h && d.h === w) return {d, rot:true};
+    }
+    return null;
+  }
+
+  /* Scale that fits a device (with its frame) inside a box. */
+  function fit(availW, availH, w, h, shape, max){
+    const bz = shape === "tablet" ? 32 : shape === "tv" ? 24 : (shape === "browser" || shape === "none") ? 0 : 24;
+    const extraH = shape === "browser" ? 30 : shape === "home" ? 46 : shape === "tv" ? 30 : 0;
+    const s = Math.min((availW - bz) / w, (availH - bz - extraH) / h, max == null ? 1 : max);
+    return Math.max(0.05, Math.round(s * 1000) / 1000);
+  }
+
+  /* Device frame + iframe. Changing size or scale never reloads the page. */
+  function viewport(o){
+    const cur = Object.assign({w:400, h:800, s:1, shape:"none", rot:false, url:"", scrolling:true, label:"", emptyText:"Paste a link to preview"}, o);
+    const el = document.createElement("div");
+    const screen = document.createElement("div"); screen.className = "fc-screen";
+    const cut = document.createElement("div"); cut.className = "fc-cut";
+    const load = document.createElement("div"); load.className = "fc-load";
+    const bar = document.createElement("div"); bar.className = "fc-bar";
+    bar.innerHTML = "<i></i><i></i><i></i><span></span>";
+    const btn = document.createElement("div"); btn.className = "fc-homebtn";
+    const stand = document.createElement("div"); stand.className = "fc-stand";
+    screen.append(load, cut);
+    el.append(bar, screen, btn, stand);
+    let iframe = null, timer = 0;
+    function frame(){
+      if (iframe) iframe.remove();
+      clearTimeout(timer);
+      el.classList.remove("fc-loaded");
+      if (!cur.url){ load.textContent = cur.emptyText; iframe = null; return; }
+      load.textContent = "Loading " + host(cur.url) + "…";
+      iframe = document.createElement("iframe");
+      iframe.title = (cur.label || "Preview") + ": " + cur.url;
+      iframe.setAttribute("scrolling", cur.scrolling ? "yes" : "no");
+      if (!cur.scrolling) iframe.style.overflow = "hidden";
+      iframe.addEventListener("load", () => el.classList.add("fc-loaded"));
+      timer = setTimeout(() => el.classList.add("fc-loaded"), 12000);
+      iframe.src = cur.url;
+      screen.prepend(iframe);
+    }
+    function apply(){
+      el.className = "fc-vp fc-" + cur.shape + (cur.rot ? " fc-rot" : "") + (el.classList.contains("fc-loaded") ? " fc-loaded" : "");
+      el.style.setProperty("--w", cur.w);
+      el.style.setProperty("--h", cur.h);
+      el.style.setProperty("--s", cur.s);
+      bar.querySelector("span").textContent = cur.url ? host(cur.url) : "fitcheck";
+    }
+    apply(); frame();
+    return {
+      el,
+      set(p){ Object.assign(cur, p); apply(); return this; },
+      setUrl(u){ if (u === cur.url) return this; cur.url = u; frame(); apply(); return this; },
+      setScrolling(b){ if (b === cur.scrolling) return this; cur.scrolling = b; frame(); return this; },
+      reload(){ frame(); return this; },
+      get state(){ return Object.assign({}, cur); }
+    };
+  }
+
+  async function copy(text){
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch {
+      const t = document.createElement("textarea"); t.value = text; t.style.position = "fixed"; t.style.opacity = "0";
+      document.body.appendChild(t); t.select();
+      let ok = false; try { ok = document.execCommand("copy"); } catch {}
+      t.remove(); return ok;
+    }
+  }
+  let toastEl = null, toastT = 0;
+  function toast(msg){
+    if (!toastEl){ toastEl = document.createElement("div"); toastEl.className = "fc-toast"; toastEl.setAttribute("role","status"); document.body.appendChild(toastEl); }
+    toastEl.textContent = msg; toastEl.classList.add("on");
+    clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("on"), 2200);
+  }
+  async function share(){ const ok = await copy(location.href); toast(ok ? "Link copied. Anyone with it sees this exact view." : "Copy failed. Copy the address bar instead."); }
+
+  const RECENT_KEY = "fitcheck-recent";
+  function recent(){ try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]").slice(0, 8); } catch { return []; } }
+  function addRecent(u){ if (!u) return; try { const r = [u, ...recent().filter(x => x !== u)].slice(0, 8); localStorage.setItem(RECENT_KEY, JSON.stringify(r)); } catch {} }
+
+  let dlg = null;
+  function help(){
+    if (!dlg){
+      dlg = document.createElement("dialog"); dlg.className = "fc-dialog";
+      dlg.innerHTML = `<h2>Site not loading?</h2>
+        <p>Fitcheck shows the site inside a frame, the same way every online responsive tester does. A blank or grey screen usually means one of these:</p>
+        <ul>
+          <li><b>The site blocks framing.</b> It sends <code>X-Frame-Options: DENY</code> or a <code>Content-Security-Policy</code> with <code>frame-ancestors</code>. Banks, Google and many login pages do this. To test your own site, allow this tester's domain in <code>frame-ancestors</code> on a staging server.</li>
+          <li><b>The link is http:// on an https:// page.</b> Browsers block mixed content. Use the https:// address.</li>
+          <li><b>The site needs a login or cookie consent.</b> Third-party cookies are often blocked inside frames. Unlock and sign in inside the frame, or test a public page.</li>
+          <li><b>Local addresses.</b> <code>localhost</code> links only work on the computer running that site.</li>
+        </ul>
+        <p>Sizes are CSS pixels, the width a browser reports to the page. They match what the phone's browser uses for media queries.</p>
+        <form method="dialog"><button class="fc-dialog-close">Got it</button></form>`;
+      document.body.appendChild(dlg);
+      dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+    }
+    dlg.showModal();
+  }
+
+  /* Small switcher between the five designs; keeps the current query string. */
+  function designNav(n){
+    const names = ["Split Compare","Showcase","QA Checklist","Coral Filmstrip","Breakpoint Strip"];
+    const file = i => `design-${i}.html`;
+    let hidden = false; try { hidden = sessionStorage.getItem("fc-nav-hidden") === "1"; } catch {}
+    if (hidden) return;
+    const nav = document.createElement("nav"); nav.className = "fc-nav"; nav.setAttribute("aria-label","Design options");
+    const q = () => location.search;
+    nav.innerHTML = `<a class="fc-nav-all" href="index.html">All designs</a>` +
+      names.map((nm, i) => `<a href="${file(i+1)}" data-i="${i+1}" title="${nm}"${i+1===n?' aria-current="page"':''}>${i+1}</a>`).join("") +
+      `<button type="button" aria-label="Hide design switcher">×</button>`;
+    nav.addEventListener("click", e => {
+      const a = e.target.closest("a[data-i]");
+      if (a){ e.preventDefault(); location.href = a.getAttribute("href") + (FC.carry ? FC.carry() : q()); }
+      if (e.target.closest("button")){ nav.remove(); try { sessionStorage.setItem("fc-nav-hidden","1"); } catch {} }
+    });
+    document.body.appendChild(nav);
+  }
+
+  const css = `
+[hidden]{display:none!important}
+.fc-vp{--s:1;--w:400;--h:800;--bz:12;--rad:44;--k:clamp(.45,var(--s),1);position:relative;flex:none;display:inline-flex;flex-direction:column;align-items:center;
+  background:var(--fc-frame,#1D2129);border:1px solid var(--fc-edge,#3A404A);padding:calc(var(--bz)*var(--k)*1px);
+  border-radius:calc((var(--rad)*var(--s) + var(--bz)*var(--k))*1px);box-shadow:var(--fc-shadow,0 24px 50px -28px rgba(10,20,40,.55))}
+.fc-vp.fc-home{--rad:4;padding-block:calc(46px*var(--k)) calc(10px*var(--k))}
+.fc-vp.fc-home.fc-rot{padding-block:calc(12px*var(--k));padding-inline:calc(46px*var(--k)) calc(46px*var(--k))}
+.fc-vp.fc-tablet{--bz:16;--rad:16}
+.fc-vp.fc-tv{--bz:12;--rad:2;border-radius:6px;margin-bottom:calc(30px*var(--k))}
+.fc-vp.fc-browser{--bz:0;--rad:0;padding:0;border-radius:10px;overflow:hidden;background:var(--fc-bar-bg,#E9EDF2)}
+.fc-vp.fc-none{--bz:0;--rad:0;padding:0;border-radius:0;background:transparent;border:1px solid var(--fc-edge,#3A404A);box-shadow:none}
+.fc-screen{position:relative;overflow:hidden;background:#fff;width:calc(var(--w)*var(--s)*1px);height:calc(var(--h)*var(--s)*1px);border-radius:calc(var(--rad)*var(--s)*1px)}
+.fc-screen iframe{position:absolute;left:0;top:0;border:0;display:block;background:#fff;width:calc(var(--w)*1px);height:calc(var(--h)*1px);transform:scale(var(--s));transform-origin:0 0}
+.fc-load{position:absolute;inset:0;display:grid;place-items:center;text-align:center;padding:12px;background:var(--fc-load-bg,#F4F6F9);color:var(--fc-load-ink,#5C6978);font:600 13px/1.4 system-ui,sans-serif;z-index:1;transition:opacity .35s}
+.fc-loaded .fc-load{opacity:0;pointer-events:none}
+.fc-cut{display:none;position:absolute;z-index:2;pointer-events:none;background:#000;left:50%;transform:translateX(-50%)}
+.fc-island .fc-cut{display:block;top:calc(11px*var(--s));width:calc(125px*var(--s));height:calc(36px*var(--s));border-radius:999px}
+.fc-notch .fc-cut{display:block;top:0;width:calc(160px*var(--s));height:calc(32px*var(--s));border-radius:0 0 calc(18px*var(--s)) calc(18px*var(--s))}
+.fc-hole .fc-cut{display:block;top:calc(12px*var(--s));width:calc(12px*var(--s));height:calc(12px*var(--s));border-radius:50%}
+.fc-rot.fc-island .fc-cut{top:50%;left:calc(11px*var(--s));transform:translateY(-50%);width:calc(36px*var(--s));height:calc(125px*var(--s))}
+.fc-rot.fc-notch .fc-cut{top:50%;left:0;transform:translateY(-50%);width:calc(32px*var(--s));height:calc(160px*var(--s));border-radius:0 calc(18px*var(--s)) calc(18px*var(--s)) 0}
+.fc-rot.fc-hole .fc-cut{top:50%;left:calc(12px*var(--s));transform:translateY(-50%)}
+.fc-bar{display:none;align-items:center;gap:6px;width:100%;height:30px;padding:0 12px;background:var(--fc-bar-bg,#E9EDF2);color:var(--fc-bar-ink,#5C6978);font:12px/1 system-ui,sans-serif;box-sizing:border-box}
+.fc-browser .fc-bar{display:flex}
+.fc-bar i{width:9px;height:9px;border-radius:50%;background:currentColor;opacity:.35;flex:none}
+.fc-bar span{margin-left:8px;flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;background:var(--fc-bar-field,rgba(255,255,255,.6));border-radius:6px;padding:4px 8px}
+.fc-homebtn{display:none;position:absolute;bottom:calc(8px*var(--k));left:50%;transform:translateX(-50%);width:calc(30px*var(--k));height:calc(30px*var(--k));border-radius:50%;border:2px solid var(--fc-edge,#3A404A);box-sizing:border-box}
+.fc-home .fc-homebtn{display:block}
+.fc-home.fc-rot .fc-homebtn{bottom:auto;top:50%;left:auto;right:calc(8px*var(--k));transform:translateY(-50%)}
+.fc-stand{display:none;position:absolute;top:100%;left:50%;transform:translateX(-50%);width:28%;height:calc(30px*var(--k));background:linear-gradient(var(--fc-edge,#3A404A),var(--fc-frame,#1D2129));clip-path:polygon(38% 0,62% 0,100% 100%,0 100%)}
+.fc-tv .fc-stand{display:block}
+.fc-toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;pointer-events:none;z-index:100;
+  background:var(--fc-toast-bg,#17202B);color:var(--fc-toast-ink,#fff);padding:10px 16px;border-radius:10px;font:600 14px/1.3 system-ui,sans-serif;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px)}
+.fc-toast.on{opacity:1;transform:translate(-50%,0)}
+.fc-dialog{max-width:560px;width:calc(100vw - 32px);border:0;border-radius:14px;padding:24px 26px;background:var(--fc-dialog-bg,#fff);color:var(--fc-dialog-ink,#17202B);font:15px/1.55 system-ui,sans-serif;box-shadow:0 30px 80px -20px rgba(0,0,0,.5)}
+.fc-dialog::backdrop{background:rgba(10,14,20,.5)}
+.fc-dialog h2{margin:0 0 8px;font-size:20px}
+.fc-dialog ul{padding-left:18px;display:grid;gap:8px}
+.fc-dialog code{font-size:.85em;background:rgba(127,127,127,.18);padding:1px 5px;border-radius:4px}
+.fc-dialog-close{margin-top:6px;border:0;border-radius:8px;padding:9px 16px;font:700 14px system-ui,sans-serif;cursor:pointer;background:var(--fc-dialog-btn,#2F5BEA);color:var(--fc-dialog-btn-ink,#fff)}
+.fc-nav{position:fixed;left:calc(12px + env(safe-area-inset-left,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:90;display:flex;align-items:center;gap:2px;padding:4px;border-radius:999px;
+  background:rgba(23,32,43,.88);backdrop-filter:blur(6px);box-shadow:0 8px 24px -10px rgba(0,0,0,.5);font:600 12px/1 system-ui,sans-serif}
+.fc-nav a,.fc-nav button{color:#D6DEE7;text-decoration:none;border:0;background:none;cursor:pointer;padding:6px 9px;border-radius:999px;font:inherit}
+.fc-nav a[aria-current]{background:#fff;color:#17202B}
+.fc-nav a:hover,.fc-nav button:hover{background:rgba(255,255,255,.14)}
+.fc-nav .fc-nav-all{padding-inline:11px}
+@media (prefers-reduced-motion:reduce){.fc-load,.fc-toast{transition:none}}
+`;
+  const st = document.createElement("style"); st.id = "fc-core"; st.textContent = css;
+  document.head.prepend(st);
+
+  return {DEVICES, TYPES, PRESETS, BREAKPOINTS, byId, ofType, brands, normalize, host, dims, matchType, matchSize,
+          readParams, writeParams, fit, viewport, copy, toast, share, recent, addRecent, help, designNav, carry:null};
+})();
+
+</script>
+<script>
+const $ = s => document.querySelector(s);
+const CHECKS = [
+  {k:"noscroll", t:"No sideways scrolling", d:"Nothing pokes out past the right edge."},
+  {k:"text", t:"Text is readable", d:"No pinch-zoom needed; lines aren't cut off."},
+  {k:"tap", t:"Buttons are easy to tap", d:"Links and buttons aren't tiny or crowded."},
+  {k:"media", t:"Images and video fit", d:"Nothing stretched, cropped badly or overflowing."},
+  {k:"menu", t:"Menu works", d:"Opens, closes and every link is reachable."},
+  {k:"forms", t:"Forms are usable", d:"Fields visible, labels clear, buttons reachable."}
+];
+const P = FC.readParams();
+const S = {url:P.url, preset:P.preset || "quick", devices:[], at:0, rot:{}, scrolling:P.scrolling, res:{}};
+let vp = null;
+
+const key = () => "fitcheck-qa:" + S.url;
+function load(){
+  S.devices = P.devices.length ? P.devices : [...FC.PRESETS.find(p => p.id === S.preset)?.ids || FC.PRESETS[0].ids];
+  S.res = {};
+  if (!S.url) return;
+  try {
+    const d = JSON.parse(localStorage.getItem(key()) || "null");
+    if (d){ S.res = d.res || {}; if (!P.devices.length && Array.isArray(d.devices) && d.devices.every(FC.byId)) S.devices = d.devices; if (d.preset) S.preset = d.preset; }
+  } catch {}
+}
+function persist(){ if (!S.url) return; try { localStorage.setItem(key(), JSON.stringify({devices:S.devices, preset:S.preset, res:S.res})); } catch {} }
+const r = id => (S.res[id] = S.res[id] || {checks:{}, note:""});
+function status(id){
+  const c = (S.res[id] || {}).checks || {}, vals = CHECKS.map(x => c[x.k]).filter(Boolean);
+  if (!vals.length) return {s:"todo", n:0};
+  if (vals.includes("fail")) return {s:"issue", n:vals.length};
+  return vals.length === CHECKS.length ? {s:"pass", n:vals.length} : {s:"part", n:vals.length};
+}
+const cur = () => S.devices[S.at];
+
+function renderQueue(){
+  $("#preset").innerHTML = FC.PRESETS.map(p => `<option value="${p.id}">${p.name}</option>`).join("") + `<option value="custom">Custom list</option>`;
+  $("#preset").value = FC.PRESETS.some(p => p.id === S.preset) ? S.preset : "custom";
+  $("#q").innerHTML = S.devices.map((id, i) => {
+    const d = FC.byId(id), st = status(id);
+    const icon = st.s === "pass" ? `<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>` : st.s === "issue" ? `<svg viewBox="0 0 24 24"><path d="M12 6v7M12 17v.5"/></svg>` : "";
+    return `<li><button class="it" type="button" data-i="${i}" aria-current="${i === S.at}"><span class="st ${st.s}" style="--p:${st.n / CHECKS.length * 100}%">${icon}</span><span>${d.name}<small>${d.w} × ${d.h} · ${st.s === "todo" ? "not tested" : st.s === "part" ? `${st.n} of ${CHECKS.length} checked` : st.s === "pass" ? "all passed" : "has issues"}</small></span></button><button class="x" type="button" data-rm="${i}" aria-label="Remove ${d.name}">×</button></li>`;
+  }).join("");
+  $("#add").innerHTML = `<option value="">+ Add a device…</option>` + FC.TYPES.map(t => `<optgroup label="${t}">` +
+    FC.ofType(t).filter(d => !S.devices.includes(d.id)).map(d => `<option value="${d.id}">${d.name} · ${d.w}×${d.h}</option>`).join("") + `</optgroup>`).join("");
+  // progress
+  const sts = S.devices.map(id => status(id).s), n = sts.length;
+  const pass = sts.filter(s => s === "pass").length, iss = sts.filter(s => s === "issue").length, part = sts.filter(s => s === "part").length;
+  $("#track").innerHTML = `<i style="width:${pass / n * 100}%;background:var(--ok)"></i><i style="width:${iss / n * 100}%;background:var(--bad)"></i><i style="width:${part / n * 100}%;background:var(--part)"></i>`;
+  $("#progTxt").innerHTML = `<b>${pass + iss} of ${n}</b> devices done${iss ? ` · <span style="color:var(--bad)">${iss} with issues</span>` : ""}`;
+}
+function renderDevice(){
+  const id = cur(); if (!id){ $("#stage").innerHTML = ""; return; }
+  const d = FC.byId(id), dm = FC.dims(d, !!S.rot[id]);
+  $("#dName").textContent = d.name; $("#dSize").textContent = `${dm.w} × ${dm.h} · ${d.type}${S.rot[id] ? " · landscape" : ""}`;
+  if (!vp){ vp = FC.viewport({url:S.url, scrolling:S.scrolling, emptyText:"Paste the link to test, then press Start"}); $("#stage").appendChild(vp.el); }
+  const st = $("#stage");
+  vp.set({w:dm.w, h:dm.h, s:FC.fit(st.clientWidth - 40, Math.max(320, st.clientHeight - 32), dm.w, dm.h, d.shape), shape:d.shape, rot:!!S.rot[id], label:d.name});
+  $("#scroll").setAttribute("aria-pressed", String(S.scrolling));
+}
+function renderChecks(){
+  const id = cur(); if (!id) return;
+  const res = r(id);
+  $("#cl").innerHTML = CHECKS.map(c => {
+    const v = res.checks[c.k] || "";
+    return `<div class="ci ${v === "pass" ? "pass" : v === "fail" ? "issue" : ""}"><div><div class="t">${c.t}</div><div class="d">${c.d}</div></div>
+      <div class="pf" role="group" aria-label="${c.t}"><button type="button" data-k="${c.k}" data-v="pass" aria-pressed="${v === "pass"}"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Pass</button><button type="button" data-k="${c.k}" data-v="fail" aria-pressed="${v === "fail"}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>Issue</button></div></div>`;
+  }).join("");
+  $("#note").value = res.note || "";
+  const sts = S.devices.map(x => status(x).s);
+  const all = sts.every(s => s === "pass" || s === "issue");
+  $("#doneBox").innerHTML = all ? `<div class="done ${sts.includes("issue") ? "issues" : ""}">${sts.includes("issue") ? `All devices checked. ${sts.filter(s => s === "issue").length} need fixes. Export the report to send it.` : "All devices pass. Export the report to send it."}</div>` : "";
+  $("#prev").disabled = S.at === 0;
+  $("#next").textContent = S.at === S.devices.length - 1 ? "Back to first" : "Next device →";
+}
+function renderAll(){ renderQueue(); renderDevice(); renderChecks(); save(); }
+function save(){
+  persist();
+  FC.writeParams({url:S.url, preset:FC.PRESETS.some(p => p.id === S.preset) && S.preset !== "quick" ? S.preset : "",
+    devices:FC.PRESETS.some(p => p.id === S.preset) ? "" : S.devices, scrolling:S.scrolling});
+}
+
+/* Events */
+$("#q").addEventListener("click", e => {
+  const rm = e.target.closest("[data-rm]");
+  if (rm){ const i = +rm.dataset.rm; S.devices.splice(i, 1); S.preset = "custom"; if (S.at >= S.devices.length) S.at = Math.max(0, S.devices.length - 1); renderAll(); return; }
+  const it = e.target.closest("[data-i]"); if (it){ S.at = +it.dataset.i; renderAll(); }
+});
+$("#preset").addEventListener("change", e => { if (e.target.value === "custom") return; S.preset = e.target.value; S.devices = [...FC.PRESETS.find(p => p.id === S.preset).ids]; S.at = 0; renderAll(); });
+$("#add").addEventListener("change", e => { if (!e.target.value) return; S.devices.push(e.target.value); S.preset = "custom"; S.at = S.devices.length - 1; renderAll(); });
+$("#cl").addEventListener("click", e => {
+  const b = e.target.closest("[data-k]"); if (!b) return;
+  const res = r(cur()); res.checks[b.dataset.k] = res.checks[b.dataset.k] === b.dataset.v ? undefined : b.dataset.v;
+  renderQueue(); renderChecks(); save();
+});
+$("#note").addEventListener("input", e => { r(cur()).note = e.target.value; persist(); });
+$("#allPass").addEventListener("click", () => { const res = r(cur()); CHECKS.forEach(c => res.checks[c.k] = "pass"); renderQueue(); renderChecks(); save(); });
+$("#clearDev").addEventListener("click", () => { S.res[cur()] = {checks:{}, note:""}; renderQueue(); renderChecks(); save(); });
+$("#prev").addEventListener("click", () => { if (S.at > 0){ S.at--; renderAll(); } });
+$("#next").addEventListener("click", () => { S.at = (S.at + 1) % S.devices.length; renderAll(); });
+$("#rot").addEventListener("click", () => { S.rot[cur()] = !S.rot[cur()]; renderDevice(); });
+$("#scroll").addEventListener("click", () => { S.scrolling = !S.scrolling; vp.setScrolling(S.scrolling); renderDevice(); save(); });
+$("#reload").addEventListener("click", () => vp && vp.reload());
+$("#help").addEventListener("click", FC.help);
+$("#share").addEventListener("click", FC.share);
+$("#f").addEventListener("submit", e => {
+  e.preventDefault();
+  const u = FC.normalize($("#u").value);
+  if (!u){ $("#u").setCustomValidity("Enter a link like client.com"); $("#u").reportValidity(); return; }
+  $("#u").setCustomValidity(""); $("#u").value = u; S.url = u; FC.addRecent(u);
+  P.devices = []; load(); S.at = 0; vp && vp.setUrl(u); renderAll();
+});
+$("#u").addEventListener("input", e => e.target.setCustomValidity(""));
+
+/* Export */
+const pop = $("#pop");
+$("#exportBtn").addEventListener("click", () => { pop.hidden = !pop.hidden; $("#exportBtn").setAttribute("aria-expanded", String(!pop.hidden)); });
+document.addEventListener("click", e => { if (!e.target.closest(".menu")){ pop.hidden = true; $("#exportBtn").setAttribute("aria-expanded", "false"); } });
+function rows(){
+  return S.devices.map(id => { const d = FC.byId(id), res = S.res[id] || {checks:{}, note:""};
+    return {device:d.name, width:d.w, height:d.h, type:d.type, status:status(id).s, ...Object.fromEntries(CHECKS.map(c => [c.k, res.checks[c.k] || ""])), note:res.note || ""}; });
+}
+function download(name, text, type){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+const fileBase = () => "fitcheck-qa-" + (FC.host(S.url) || "site").replace(/[^a-z0-9.-]/gi, "_") + "-" + new Date().toISOString().slice(0, 10);
+pop.addEventListener("click", async e => {
+  const x = e.target.closest("[data-x]")?.dataset.x; if (!x) return;
+  pop.hidden = true;
+  if (x === "copy"){
+    const lines = [`Responsive check: ${S.url || "(no link)"}`, `Date: ${new Date().toLocaleDateString()}`, ""];
+    rows().forEach(r => {
+      lines.push(`${r.status === "pass" ? "✔" : r.status === "issue" ? "✘" : "…"} ${r.device} (${r.width}×${r.height})`);
+      CHECKS.forEach(c => { if (r[c.k] === "fail") lines.push(`   - Issue: ${c.t}`); });
+      if (r.note) lines.push(`   Note: ${r.note}`);
+    });
+    const ok = await FC.copy(lines.join("\n")); FC.toast(ok ? "Report copied. Paste it into an email or ticket." : "Copy failed.");
+  }
+  if (x === "csv"){
+    const head = ["device","width","height","type","status",...CHECKS.map(c => c.k),"note"];
+    const esc = v => `"${String(v).replace(/"/g, '""')}"`;
+    download(fileBase() + ".csv", [head.join(","), ...rows().map(r => head.map(h => esc(r[h])).join(","))].join("\n"), "text/csv");
+  }
+  if (x === "json") download(fileBase() + ".json", JSON.stringify({url:S.url, date:new Date().toISOString(), checks:CHECKS, results:rows()}, null, 2), "application/json");
+  if (x === "reset"){ S.res = {}; renderAll(); FC.toast("Results cleared for this link."); }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input,textarea,select")) return;
+  if (e.key === "ArrowRight" || e.key === "n") $("#next").click();
+  if (e.key === "ArrowLeft" || e.key === "p") $("#prev").click();
+  if (e.key === "Escape") pop.hidden = true;
+});
+let rt = 0; window.addEventListener("resize", () => { cancelAnimationFrame(rt); rt = requestAnimationFrame(renderDevice); });
+
+$("#u").value = S.url; load(); renderAll();
+FC.designNav(3);
+</script>
+</body>
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck Frontend Designs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* Gallery of the five frontend tester designs. A shared test link is carried into each one. */
+:root{--bg:#F1F3F6;--panel:#FFFFFF;--ink:#17202B;--muted:#626E7C;--line:#D9DFE6;--accent:#2F5BEA;
+  --f:"Manrope",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;--mono:"JetBrains Mono",ui-monospace,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root{--bg:#101318;--panel:#171B21;--ink:#E4E9EF;--muted:#8D99A7;--line:#2A313B;--accent:#7A9BFF;color-scheme:dark}}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--f)}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:max(20px,env(safe-area-inset-left,0px))}
+header{padding-block:44px 24px}
+.eyebrow{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:clamp(28px,4vw,42px);letter-spacing:-.02em;margin:8px 0 10px;text-wrap:balance}
+header p{max-width:72ch;color:var(--muted);margin:0}
+header code{font:12.5px var(--mono)}
+form{display:flex;gap:10px;margin-top:22px;max-width:720px;flex-wrap:wrap}
+form label{flex:1;min-width:240px;display:flex;align-items:center;gap:10px;background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:0 12px}
+form label:focus-within{border-color:var(--accent)}
+form span{font:500 12px var(--mono);color:var(--muted);white-space:nowrap}
+form input{flex:1;min-width:0;border:0;background:none;padding:11px 0;font:14px var(--mono);color:inherit;outline:none}
+form button{border:0;border-radius:10px;background:var(--accent);color:#fff;font:700 14px var(--f);padding:0 18px;cursor:pointer;min-height:44px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:20px;padding-bottom:30px}
+.card{display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;min-width:0}
+.thumb{aspect-ratio:16/9;position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+.body{padding:18px 20px 20px;display:flex;flex-direction:column;gap:10px;flex:1}
+.top{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.n{font:500 12px var(--mono);color:var(--accent)}
+.card h2{margin:0;font-size:20px;letter-spacing:-.01em}
+.tag{font:500 11.5px var(--mono);border:1px solid var(--line);border-radius:999px;padding:1px 8px;color:var(--muted)}
+.tag.kept{border-color:var(--accent);color:var(--accent)}
+.card p{margin:0;color:var(--muted);font-size:14px}
+.card ul{margin:0;padding-left:18px;font-size:14px;display:grid;gap:3px}
+.go{margin-top:auto;display:inline-flex;align-self:flex-start;gap:6px;align-items:center;text-decoration:none;font-weight:700;color:#fff;background:var(--ink);border-radius:9px;padding:9px 16px}
+@media (prefers-color-scheme:dark){.go{color:#101318}}
+.go:hover{opacity:.9}
+.foot{padding-block:10px 50px;color:var(--muted);font-size:13.5px;max-width:80ch}
+.foot code{font:12.5px var(--mono);background:var(--panel);border:1px solid var(--line);padding:1px 6px;border-radius:5px}
+
+/* Thumbnails: drawn with CSS in each design's own palette */
+.t{position:absolute;inset:0;display:flex;flex-direction:column}
+.t .hb{height:16%;display:flex;align-items:center;gap:3%;padding:0 4%;flex:none}
+.t .ph{border-radius:9px;border:3px solid;flex:none}
+/* 1 Split Compare */
+.t1{background:#EEF6FC}.t1 .hb{background:#fff;border-bottom:1px solid #D2E5F2}
+.t1 .u{flex:1;height:44%;border:1.5px solid #D2E5F2;border-radius:6px;background:#EEF6FC;position:relative}.t1 .u::before{content:"";position:absolute;left:4px;top:22%;width:12%;height:56%;border-radius:3px;background:#0277B6}.t1 .u.b::before{background:#C2410C}
+.t1 .sw{width:5%;aspect-ratio:1;border-radius:50%;border:1.5px solid #D2E5F2;background:#fff}
+.t1 .st{flex:1;display:flex;gap:10%;align-items:center;justify-content:center}
+.t1 .ph{width:16%;aspect-ratio:9/19;border-color:#132534;background:linear-gradient(#0277B6 0 22%,#fff 22%)}.t1 .ph.b{background:linear-gradient(#C2410C 0 30%,#fff 30%)}
+/* 2 Showcase */
+.t2{background:radial-gradient(70% 60% at 50% 38%,#2A2F38,#0B0C0F)}.t2 .hb{background:#101216;border-bottom:1px solid #2B2F37}.t2 .u{flex:1;height:44%;border-radius:6px;background:#1A1D23;border:1px solid #2B2F37}.t2 .b{width:14%;height:44%;border-radius:5px;background:#F5B544}
+.t2 .sc{flex:1;position:relative}
+.t2 .lap{position:absolute;left:25%;top:10%;width:50%;height:56%;border:5px solid #0B0C0F;border-radius:8px 8px 2px 2px;background:linear-gradient(#F5B544 0 18%,#ECEEF2 18%)}
+.t2 .deck{position:absolute;left:21%;top:66%;width:58%;height:5%;border-radius:0 0 8px 8px;background:linear-gradient(#C9CDD3,#6B7078)}
+.t2 .tab{position:absolute;left:12%;bottom:8%;width:17%;height:52%;border:4px solid #0B0C0F;border-radius:6px;background:linear-gradient(#F5B544 0 14%,#ECEEF2 14%)}
+.t2 .phn{position:absolute;right:14%;bottom:8%;width:9%;height:42%;border:3px solid #0B0C0F;border-radius:7px;background:linear-gradient(#F5B544 0 16%,#ECEEF2 16%)}
+/* 3 QA Checklist */
+.t3{background:#F7F5FF}.t3 .hb{background:#fff;border-bottom:1px solid #E2DEF5}.t3 .u{flex:1;height:44%;border-radius:999px;background:#F7F5FF;border:1.5px solid #E2DEF5}.t3 .b{width:16%;height:44%;border-radius:999px;background:#5B3FE0}
+.t3 .m{flex:1;display:grid;grid-template-columns:24% 1fr 30%}
+.t3 .q{background:#fff;border-right:1px solid #E2DEF5;padding:6% 8%;display:flex;flex-direction:column;gap:9%}
+.t3 .q i{height:9%;border-radius:4px;background:#ECE8FF;position:relative;padding-left:0}.t3 .q i::before{content:"";position:absolute;left:-2px;top:-10%;width:18%;height:120%;border-radius:50%;background:#1A8A5A}
+.t3 .q i:nth-child(2)::before{background:#D23F57}.t3 .q i:nth-child(3)::before{background:#C98A12}.t3 .q i:nth-child(4)::before{background:#CFC8EE}
+.t3 .c{display:grid;place-items:center}.t3 .ph{width:30%;aspect-ratio:9/19;border-color:#221C3D;background:#fff}
+.t3 .r{background:#fff;border-left:1px solid #E2DEF5;padding:6% 8%;display:flex;flex-direction:column;gap:6%}
+.t3 .r i{height:12%;border-radius:5px;border:1px solid #E2DEF5;display:flex;gap:6%;justify-content:flex-end;padding:3%}
+.t3 .r i::before,.t3 .r i::after{content:"";width:28%;border-radius:3px;background:#1A8A5A}.t3 .r i::after{background:#F7F5FF}
+.t3 .r i:nth-child(3)::before{background:#F7F5FF}.t3 .r i:nth-child(3)::after{background:#D23F57}
+/* 4 Coral Filmstrip (kept) */
+.t4{background:#FFF8F2}.t4 .hb{height:18%}.t4 .u{flex:1;height:46%;border:1.5px solid #F0DFD3;border-radius:8px;background:#fff}.t4 .b{width:13%;height:46%;border-radius:7px;background:#E0532B}
+.t4 .g{height:10%;display:flex;gap:2%;align-items:center;padding:0 4%}.t4 .g i{height:60%;width:12%;border-radius:999px;background:#F0DFD3}.t4 .g i:first-child{background:#2A1D17}
+.t4 .strip{flex:1;display:flex;gap:4%;align-items:flex-end;padding:0 4% 4%;overflow:hidden;border-bottom:1px solid #F0DFD3}
+.t4 .ph{border-color:#2B201A;background:#fff}.t4 .fb{height:13%;background:#fff}
+/* 5 Breakpoint Strip */
+.t5{background:#F5F3EE}.t5 .hb{border-bottom:1px solid #DEDAD0}.t5 .u{flex:1;height:44%;border:1px solid #C9C3B6;border-radius:4px;background:#fff}.t5 .b{width:13%;height:44%;border-radius:0 4px 4px 0;background:#0F766E}
+.t5 .ct{height:10%;display:flex;gap:2%;align-items:center;padding:0 4%;border-bottom:1px solid #DEDAD0}.t5 .ct i{height:52%;width:8%;border:1px solid #C9C3B6;border-radius:3px;background:#fff}
+.t5 .st{flex:1;display:flex;gap:3%;align-items:flex-start;padding:3% 4%;overflow:hidden}
+.t5 .col{flex:none;display:flex;flex-direction:column;gap:5px}.t5 .col b{height:3px;background:#1C2430}.t5 .col em{height:7px;width:40%;background:#0F766E;border-radius:2px}
+.t5 .col i{display:block;border:1px solid #C9C3B6;background:linear-gradient(#1C2430 0 9%,#fff 9% 30%,#D9EFEC 30% 52%,#fff 52%)}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="eyebrow">Fitcheck · frontend tester · 5 designs</div>
+  <h1>Pick a frontend design</h1>
+  <p>Each design is a working tester. Paste any link and it renders at real device widths. Links use the same format as other testers: <code>?url=…&amp;width=1024&amp;height=600&amp;type=Desktop&amp;scrolling=yes</code>. Use the 1–5 switcher at the bottom left of any design to jump between them with the same link.</p>
+  <form id="f">
+    <label><span>Test link</span><input id="u" type="text" inputmode="url" autocomplete="off" spellcheck="false" value="https://example.com" aria-label="Test link used by every design"></label>
+    <button type="submit">Use this link</button>
+  </form>
+</header>
+
+<main class="wrap grid">
+  <article class="card">
+    <div class="thumb"><div class="t t1"><div class="hb"><div class="u"></div><div class="sw"></div><div class="u b"></div></div><div class="st"><div class="ph"></div><div class="ph b"></div></div></div></div>
+    <div class="body">
+      <div class="top"><span class="n">01</span><h2>Split Compare</h2><span class="tag">light</span><span class="tag">two links</span></div>
+      <p>Put the current site and the new version next to each other on the same device. Ideal for showing a client before and after a redesign, or live against staging.</p>
+      <ul><li>Side by side, or one Swipe view with a drag handle</li><li>Name each side (Live, Staging…) and swap them</li><li>One device picker drives both sides</li></ul>
+      <a class="go" data-f="design-1.html" href="design-1.html">Open design 1 →</a>
+    </div>
+  </article>
+  <article class="card">
+    <div class="thumb"><div class="t t2"><div class="hb"><div class="u"></div><div class="b"></div></div><div class="sc"><div class="lap"></div><div class="deck"></div><div class="tab"></div><div class="phn"></div></div></div></div>
+    <div class="body">
+      <div class="top"><span class="n">02</span><h2>Showcase</h2><span class="tag">dark</span><span class="tag">presentation</span></div>
+      <p>A laptop, tablet and phone arranged as one live mockup scene. Made for client meetings: press Present to go full screen with no controls.</p>
+      <ul><li>Choose the model in each slot</li><li>Five backdrops, from dark spotlight to light paper</li><li>Pages stay live: scroll and click inside</li></ul>
+      <a class="go" data-f="design-2.html" href="design-2.html">Open design 2 →</a>
+    </div>
+  </article>
+  <article class="card">
+    <div class="thumb"><div class="t t3"><div class="hb"><div class="u"></div><div class="b"></div></div><div class="m"><div class="q"><i></i><i></i><i></i><i></i></div><div class="c"><div class="ph"></div></div><div class="r"><i></i><i></i><i></i><i></i><i></i></div></div></div></div>
+    <div class="body">
+      <div class="top"><span class="n">03</span><h2>QA Checklist</h2><span class="tag">light</span><span class="tag">testing</span></div>
+      <p>Work through a queue of devices one at a time. Mark six checks Pass or Issue, add notes, and export a report for the client or developer.</p>
+      <ul><li>Progress bar and per-device status</li><li>Results saved in the browser per link</li><li>Copy as text, or download CSV / JSON</li></ul>
+      <a class="go" data-f="design-3.html" href="design-3.html">Open design 3 →</a>
+    </div>
+  </article>
+  <article class="card">
+    <div class="thumb"><div class="t t4"><div class="hb"><div class="u"></div><div class="b"></div></div><div class="g"><i></i><i></i><i></i><i></i></div><div class="strip"><div class="ph" style="width:9%;height:62%"></div><div class="ph" style="width:8.5%;height:58%"></div><div class="ph" style="width:8%;height:55%"></div><div class="ph" style="width:7.5%;height:46%"></div><div class="ph" style="width:9%;height:60%"></div><div class="ph" style="width:8%;height:56%"></div><div class="ph" style="width:9%;height:61%"></div></div><div class="fb"></div></div></div>
+    <div class="body">
+      <div class="top"><span class="n">04</span><h2>Coral Filmstrip</h2><span class="tag">light</span><span class="tag kept">kept</span></div>
+      <p>A whole family of devices in one swipeable row. True scale shows the real size difference between phones; click a name to open it large.</p>
+      <ul><li>Families: Popular, iPhone, Galaxy, Pixel, Tablets, Laptops, TV</li><li>True scale or fill height</li><li>Focus view with ← → between devices</li></ul>
+      <a class="go" data-f="design-4.html" href="design-4.html">Open design 4 →</a>
+    </div>
+  </article>
+  <article class="card">
+    <div class="thumb"><div class="t t5"><div class="hb"><div class="u"></div><div class="b"></div></div><div class="ct"><i></i><i></i><i></i><i></i><i></i></div><div class="st">
+      <div class="col" style="width:7%"><b></b><em></em><i style="height:120px"></i></div><div class="col" style="width:11%"><b></b><em></em><i style="height:120px"></i></div><div class="col" style="width:14%"><b></b><em></em><i style="height:120px"></i></div><div class="col" style="width:19%"><b></b><em></em><i style="height:120px"></i></div><div class="col" style="width:24%"><b></b><em></em><i style="height:120px"></i></div>
+    </div></div></div>
+    <div class="body">
+      <div class="top"><span class="n">05</span><h2>Breakpoint Strip</h2><span class="tag">light</span><span class="tag">developers</span></div>
+      <p>The same page at every breakpoint width, side by side and frameless, so you see exactly where the layout changes. Labelled with Tailwind's breakpoint names.</p>
+      <ul><li>Add or remove any width; Tailwind or common-device sets</li><li>Set the viewport height and scale</li><li>Shows which devices share each width</li></ul>
+      <a class="go" data-f="design-5.html" href="design-5.html">Open design 5 →</a>
+    </div>
+  </article>
+</main>
+
+<p class="wrap foot">Each design is one self-contained HTML file. Source lives in <code>docs/frontend/src</code>; run <code>node docs/frontend/build.js</code> after editing. Some sites refuse to be shown inside another page (banks, Google, many login pages). Every design has a “Site not loading?” explanation.</p>
+
+<script>
+const inp = document.getElementById("u");
+try { const s = localStorage.getItem("fitcheck-gallery-url"); if (s) inp.value = s; } catch {}
+function apply(){
+  let u = inp.value.trim();
+  if (u && !/^https?:\/\//i.test(u)) u = "https://" + u;
+  document.querySelectorAll(".go").forEach(a => a.href = a.dataset.f + (u ? "?url=" + encodeURIComponent(u) : ""));
+  try { localStorage.setItem("fitcheck-gallery-url", inp.value.trim()); } catch {}
+}
+document.getElementById("f").addEventListener("submit", e => { e.preventDefault(); apply(); document.querySelector(".go").focus(); });
+inp.addEventListener("change", apply);
+apply();
+</script>
+</body>
+</html>

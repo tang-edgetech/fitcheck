@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck · QA Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Design 3 · QA Checklist. Light lavender. Work through a queue of devices, mark each check Pass or Issue, export a report. */
+:root{
+  --bg:#F7F5FF; --panel:#FFFFFF; --ink:#1F1A3A; --muted:#6E6890; --line:#E2DEF5; --line-2:#CFC8EE;
+  --accent:#5B3FE0; --accent-ink:#FFFFFF; --soft:#ECE8FF;
+  --ok:#1A8A5A; --ok-soft:#DDF3E8; --bad:#D23F57; --bad-soft:#FBE3E7; --part:#C98A12; --part-soft:#FBF0D6;
+  --fc-frame:#221C3D; --fc-edge:#3D3563; --fc-bar-bg:#EEEAFB; --fc-bar-ink:#6E6890; --fc-load-bg:#F7F5FF; --fc-load-ink:#6E6890;
+  --fc-shadow:0 26px 50px -30px rgba(40,25,110,.5); --fc-toast-bg:#1F1A3A; --fc-dialog-btn:#5B3FE0;
+  --f:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --d:"Outfit","Figtree",system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-rows:auto minmax(0,1fr);background:var(--bg);color:var(--ink);font:14.5px/1.45 var(--f);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+header{display:flex;align-items:center;gap:14px;padding:12px 18px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.logo{display:flex;align-items:center;gap:9px;font:700 18px var(--d);letter-spacing:-.02em;color:inherit;text-decoration:none;white-space:nowrap}
+.logo i{width:22px;height:22px;border-radius:7px;background:var(--accent);display:grid;place-items:center;color:#fff}
+.logo i svg{width:13px;height:13px;stroke-width:3}
+form.url{flex:1;max-width:620px;min-width:220px;display:flex;border:1.5px solid var(--line);border-radius:999px;background:var(--bg)}
+form.url:focus-within{border-color:var(--accent);background:var(--panel)}
+form.url input{flex:1;min-width:0;border:0;background:none;padding:9px 16px;outline:none}
+form.url button{margin:3px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:6px 16px;cursor:pointer}
+.prog{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted);white-space:nowrap}
+.prog .track{width:130px;height:8px;border-radius:999px;background:var(--soft);overflow:hidden;display:flex}
+.prog .track i{height:100%}
+.prog b{color:var(--ink)}
+.acts{display:flex;gap:6px;margin-left:auto}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--panel);border-radius:999px;padding:7px 13px;font-weight:600;font-size:13.5px;cursor:pointer;white-space:nowrap;color:inherit;text-decoration:none}
+.btn:hover{border-color:var(--line-2)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+.menu{position:relative}
+.menu .pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px;min-width:210px;box-shadow:0 20px 40px -20px rgba(40,25,110,.4);z-index:30}
+.menu .pop button{display:flex;width:100%;border:0;background:none;text-align:left;padding:8px 10px;border-radius:9px;cursor:pointer;gap:8px;align-items:center}
+.menu .pop button:hover{background:var(--bg)}
+
+main{display:grid;grid-template-columns:250px minmax(0,1fr) 340px;min-height:0}
+aside{background:var(--panel);overflow-y:auto;min-height:0}
+#queue{border-right:1px solid var(--line);padding:14px}
+#check{border-left:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:14px}
+.h{font:600 12px var(--d);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:0 0 8px}
+select.full{width:100%;border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--panel);cursor:pointer}
+.q{list-style:none;margin:12px 0 0;padding:0;display:grid;gap:4px}
+.q button.it{display:grid;grid-template-columns:22px 1fr auto;gap:9px;align-items:center;width:100%;border:1px solid transparent;background:none;text-align:left;padding:8px;border-radius:11px;cursor:pointer}
+.q button.it:hover{background:var(--bg)}
+.q button.it[aria-current="true"]{background:var(--soft);border-color:var(--line-2)}
+.q small{color:var(--muted);font-size:12px;display:block}
+.q .x{opacity:0;border:0;background:none;color:var(--muted);cursor:pointer;padding:2px 4px;border-radius:6px}
+.q li:hover .x,.q .x:focus-visible{opacity:1}
+.q li{position:relative}
+.q li .x{position:absolute;right:6px;top:50%;transform:translateY(-50%)}
+.st{width:20px;height:20px;border-radius:50%;border:2px solid var(--line-2);display:grid;place-items:center}
+.st svg{width:11px;height:11px;stroke-width:3.4}
+.st.pass{background:var(--ok);border-color:var(--ok);color:#fff}
+.st.issue{background:var(--bad);border-color:var(--bad);color:#fff}
+.st.part{border-color:var(--part);background:conic-gradient(var(--part) var(--p,50%),transparent 0)}
+.addrow{margin-top:10px}
+
+.center{display:grid;grid-template-rows:auto minmax(0,1fr);min-height:0}
+.cbar{display:flex;align-items:center;gap:8px;padding:10px 16px;flex-wrap:wrap}
+.cbar h2{margin:0;font:600 18px var(--d);letter-spacing:-.01em}
+.cbar small{color:var(--muted)}
+.cbar .grow{flex:1}
+.stage{overflow:auto;display:flex;padding:8px 20px 24px}
+.stage > .fc-vp{margin:auto}
+
+.cl{display:grid;gap:8px}
+.ci{border:1px solid var(--line);border-radius:14px;padding:11px 12px;display:grid;gap:8px;background:var(--panel)}
+.ci.pass{border-color:#BFE5D1;background:linear-gradient(var(--ok-soft),var(--panel) 70%)}
+.ci.issue{border-color:#F2C4CC;background:linear-gradient(var(--bad-soft),var(--panel) 70%)}
+.ci .t{font-weight:600}
+.ci .d{font-size:12.5px;color:var(--muted);margin-top:1px}
+.pf{display:flex;gap:6px}
+.pf button{flex:1;display:inline-flex;justify-content:center;align-items:center;gap:6px;border:1.5px solid var(--line);background:var(--panel);border-radius:10px;padding:6px;font-weight:600;font-size:13px;cursor:pointer;color:var(--muted)}
+.pf button[data-v="pass"][aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.pf button[data-v="fail"][aria-pressed="true"]{background:var(--bad);border-color:var(--bad);color:#fff}
+textarea{width:100%;min-height:84px;resize:vertical;border:1.5px solid var(--line);border-radius:12px;padding:10px;outline:none;background:var(--panel)}
+textarea:focus{border-color:var(--accent)}
+.nav{display:flex;gap:8px;margin-top:auto;padding-top:6px}
+.nav .btn{flex:1;justify-content:center;padding:10px}
+.done{border-radius:14px;background:var(--ok-soft);color:#11603F;padding:12px 14px;font-weight:600}
+.done.issues{background:var(--bad-soft);color:#97243A}
+.mini{display:flex;gap:6px;flex-wrap:wrap}
+@media (max-width:1180px){ main{grid-template-columns:220px minmax(0,1fr) 300px} }
+@media (max-width:900px){
+  body{grid-template-rows:auto auto}
+  html,body{height:auto}
+  main{grid-template-columns:1fr}
+  #queue,#check{border:0;border-bottom:1px solid var(--line)}
+  .stage{min-height:70vh}
+  .prog .track{width:80px}
+}
+</style>
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html"><i><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></i>Fitcheck QA</a>
+  <form class="url" id="f" role="search"><input id="u" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Link to test" aria-label="Website link"><button type="submit">Start</button></form>
+  <div class="prog" aria-live="polite"><span class="track" id="track"></span><span id="progTxt"></span></div>
+  <div class="acts">
+    <button class="btn" id="share" type="button">Share</button>
+    <div class="menu">
+      <button class="btn pri" id="exportBtn" type="button" aria-expanded="false" aria-controls="pop">Export report</button>
+      <div class="pop" id="pop" hidden>
+        <button type="button" data-x="copy">Copy as text</button>
+        <button type="button" data-x="csv">Download CSV</button>
+        <button type="button" data-x="json">Download JSON</button>
+        <button type="button" data-x="reset" style="color:var(--bad)">Clear all results</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <aside id="queue" aria-label="Devices to test">
+    <p class="h">Device set</p>
+    <select class="full" id="preset" aria-label="Device set"></select>
+    <ul class="q" id="q"></ul>
+    <div class="addrow"><select class="full" id="add" aria-label="Add a device"></select></div>
+  </aside>
+
+  <section class="center" aria-label="Preview">
+    <div class="cbar">
+      <h2 id="dName"></h2><small id="dSize"></small>
+      <span class="grow"></span>
+      <button class="btn" id="rot" type="button">Rotate</button>
+      <button class="btn" id="scroll" type="button" aria-pressed="true">Scrolling</button>
+      <button class="btn" id="reload" type="button">Reload</button>
+      <button class="btn" id="help" type="button">Not loading?</button>
+    </div>
+    <div class="stage" id="stage"></div>
+  </section>
+
+  <aside id="check" aria-label="Checklist">
+    <div>
+      <p class="h">Checklist for this device</p>
+      <div class="mini"><button class="btn" id="allPass" type="button">Mark all pass</button><button class="btn" id="clearDev" type="button">Clear</button></div>
+    </div>
+    <div class="cl" id="cl"></div>
+    <div>
+      <p class="h">Notes</p>
+      <textarea id="note" placeholder="What's wrong, where, and how to reproduce. E.g. “Menu button hidden under cookie banner on the home page.”" aria-label="Notes for this device"></textarea>
+    </div>
+    <div id="doneBox"></div>
+    <div class="nav"><button class="btn" id="prev" type="button">← Previous</button><button class="btn pri" id="next" type="button">Next device →</button></div>
+  </aside>
+</main>
+
+<script>/*@CORE*/</script>
+<script>
+const $ = s => document.querySelector(s);
+const CHECKS = [
+  {k:"noscroll", t:"No sideways scrolling", d:"Nothing pokes out past the right edge."},
+  {k:"text", t:"Text is readable", d:"No pinch-zoom needed; lines aren't cut off."},
+  {k:"tap", t:"Buttons are easy to tap", d:"Links and buttons aren't tiny or crowded."},
+  {k:"media", t:"Images and video fit", d:"Nothing stretched, cropped badly or overflowing."},
+  {k:"menu", t:"Menu works", d:"Opens, closes and every link is reachable."},
+  {k:"forms", t:"Forms are usable", d:"Fields visible, labels clear, buttons reachable."}
+];
+const P = FC.readParams();
+const S = {url:P.url, preset:P.preset || "quick", devices:[], at:0, rot:{}, scrolling:P.scrolling, res:{}};
+let vp = null;
+
+const key = () => "fitcheck-qa:" + S.url;
+function load(){
+  S.devices = P.devices.length ? P.devices : [...FC.PRESETS.find(p => p.id === S.preset)?.ids || FC.PRESETS[0].ids];
+  S.res = {};
+  if (!S.url) return;
+  try {
+    const d = JSON.parse(localStorage.getItem(key()) || "null");
+    if (d){ S.res = d.res || {}; if (!P.devices.length && Array.isArray(d.devices) && d.devices.every(FC.byId)) S.devices = d.devices; if (d.preset) S.preset = d.preset; }
+  } catch {}
+}
+function persist(){ if (!S.url) return; try { localStorage.setItem(key(), JSON.stringify({devices:S.devices, preset:S.preset, res:S.res})); } catch {} }
+const r = id => (S.res[id] = S.res[id] || {checks:{}, note:""});
+function status(id){
+  const c = (S.res[id] || {}).checks || {}, vals = CHECKS.map(x => c[x.k]).filter(Boolean);
+  if (!vals.length) return {s:"todo", n:0};
+  if (vals.includes("fail")) return {s:"issue", n:vals.length};
+  return vals.length === CHECKS.length ? {s:"pass", n:vals.length} : {s:"part", n:vals.length};
+}
+const cur = () => S.devices[S.at];
+
+function renderQueue(){
+  $("#preset").innerHTML = FC.PRESETS.map(p => `<option value="${p.id}">${p.name}</option>`).join("") + `<option value="custom">Custom list</option>`;
+  $("#preset").value = FC.PRESETS.some(p => p.id === S.preset) ? S.preset : "custom";
+  $("#q").innerHTML = S.devices.map((id, i) => {
+    const d = FC.byId(id), st = status(id);
+    const icon = st.s === "pass" ? `<svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>` : st.s === "issue" ? `<svg viewBox="0 0 24 24"><path d="M12 6v7M12 17v.5"/></svg>` : "";
+    return `<li><button class="it" type="button" data-i="${i}" aria-current="${i === S.at}"><span class="st ${st.s}" style="--p:${st.n / CHECKS.length * 100}%">${icon}</span><span>${d.name}<small>${d.w} × ${d.h} · ${st.s === "todo" ? "not tested" : st.s === "part" ? `${st.n} of ${CHECKS.length} checked` : st.s === "pass" ? "all passed" : "has issues"}</small></span></button><button class="x" type="button" data-rm="${i}" aria-label="Remove ${d.name}">×</button></li>`;
+  }).join("");
+  $("#add").innerHTML = `<option value="">+ Add a device…</option>` + FC.TYPES.map(t => `<optgroup label="${t}">` +
+    FC.ofType(t).filter(d => !S.devices.includes(d.id)).map(d => `<option value="${d.id}">${d.name} · ${d.w}×${d.h}</option>`).join("") + `</optgroup>`).join("");
+  // progress
+  const sts = S.devices.map(id => status(id).s), n = sts.length;
+  const pass = sts.filter(s => s === "pass").length, iss = sts.filter(s => s === "issue").length, part = sts.filter(s => s === "part").length;
+  $("#track").innerHTML = `<i style="width:${pass / n * 100}%;background:var(--ok)"></i><i style="width:${iss / n * 100}%;background:var(--bad)"></i><i style="width:${part / n * 100}%;background:var(--part)"></i>`;
+  $("#progTxt").innerHTML = `<b>${pass + iss} of ${n}</b> devices done${iss ? ` · <span style="color:var(--bad)">${iss} with issues</span>` : ""}`;
+}
+function renderDevice(){
+  const id = cur(); if (!id){ $("#stage").innerHTML = ""; return; }
+  const d = FC.byId(id), dm = FC.dims(d, !!S.rot[id]);
+  $("#dName").textContent = d.name; $("#dSize").textContent = `${dm.w} × ${dm.h} · ${d.type}${S.rot[id] ? " · landscape" : ""}`;
+  if (!vp){ vp = FC.viewport({url:S.url, scrolling:S.scrolling, emptyText:"Paste the link to test, then press Start"}); $("#stage").appendChild(vp.el); }
+  const st = $("#stage");
+  vp.set({w:dm.w, h:dm.h, s:FC.fit(st.clientWidth - 40, Math.max(320, st.clientHeight - 32), dm.w, dm.h, d.shape), shape:d.shape, rot:!!S.rot[id], label:d.name});
+  $("#scroll").setAttribute("aria-pressed", String(S.scrolling));
+}
+function renderChecks(){
+  const id = cur(); if (!id) return;
+  const res = r(id);
+  $("#cl").innerHTML = CHECKS.map(c => {
+    const v = res.checks[c.k] || "";
+    return `<div class="ci ${v === "pass" ? "pass" : v === "fail" ? "issue" : ""}"><div><div class="t">${c.t}</div><div class="d">${c.d}</div></div>
+      <div class="pf" role="group" aria-label="${c.t}"><button type="button" data-k="${c.k}" data-v="pass" aria-pressed="${v === "pass"}"><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg>Pass</button><button type="button" data-k="${c.k}" data-v="fail" aria-pressed="${v === "fail"}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>Issue</button></div></div>`;
+  }).join("");
+  $("#note").value = res.note || "";
+  const sts = S.devices.map(x => status(x).s);
+  const all = sts.every(s => s === "pass" || s === "issue");
+  $("#doneBox").innerHTML = all ? `<div class="done ${sts.includes("issue") ? "issues" : ""}">${sts.includes("issue") ? `All devices checked. ${sts.filter(s => s === "issue").length} need fixes. Export the report to send it.` : "All devices pass. Export the report to send it."}</div>` : "";
+  $("#prev").disabled = S.at === 0;
+  $("#next").textContent = S.at === S.devices.length - 1 ? "Back to first" : "Next device →";
+}
+function renderAll(){ renderQueue(); renderDevice(); renderChecks(); save(); }
+function save(){
+  persist();
+  FC.writeParams({url:S.url, preset:FC.PRESETS.some(p => p.id === S.preset) && S.preset !== "quick" ? S.preset : "",
+    devices:FC.PRESETS.some(p => p.id === S.preset) ? "" : S.devices, scrolling:S.scrolling});
+}
+
+/* Events */
+$("#q").addEventListener("click", e => {
+  const rm = e.target.closest("[data-rm]");
+  if (rm){ const i = +rm.dataset.rm; S.devices.splice(i, 1); S.preset = "custom"; if (S.at >= S.devices.length) S.at = Math.max(0, S.devices.length - 1); renderAll(); return; }
+  const it = e.target.closest("[data-i]"); if (it){ S.at = +it.dataset.i; renderAll(); }
+});
+$("#preset").addEventListener("change", e => { if (e.target.value === "custom") return; S.preset = e.target.value; S.devices = [...FC.PRESETS.find(p => p.id === S.preset).ids]; S.at = 0; renderAll(); });
+$("#add").addEventListener("change", e => { if (!e.target.value) return; S.devices.push(e.target.value); S.preset = "custom"; S.at = S.devices.length - 1; renderAll(); });
+$("#cl").addEventListener("click", e => {
+  const b = e.target.closest("[data-k]"); if (!b) return;
+  const res = r(cur()); res.checks[b.dataset.k] = res.checks[b.dataset.k] === b.dataset.v ? undefined : b.dataset.v;
+  renderQueue(); renderChecks(); save();
+});
+$("#note").addEventListener("input", e => { r(cur()).note = e.target.value; persist(); });
+$("#allPass").addEventListener("click", () => { const res = r(cur()); CHECKS.forEach(c => res.checks[c.k] = "pass"); renderQueue(); renderChecks(); save(); });
+$("#clearDev").addEventListener("click", () => { S.res[cur()] = {checks:{}, note:""}; renderQueue(); renderChecks(); save(); });
+$("#prev").addEventListener("click", () => { if (S.at > 0){ S.at--; renderAll(); } });
+$("#next").addEventListener("click", () => { S.at = (S.at + 1) % S.devices.length; renderAll(); });
+$("#rot").addEventListener("click", () => { S.rot[cur()] = !S.rot[cur()]; renderDevice(); });
+$("#scroll").addEventListener("click", () => { S.scrolling = !S.scrolling; vp.setScrolling(S.scrolling); renderDevice(); save(); });
+$("#reload").addEventListener("click", () => vp && vp.reload());
+$("#help").addEventListener("click", FC.help);
+$("#share").addEventListener("click", FC.share);
+$("#f").addEventListener("submit", e => {
+  e.preventDefault();
+  const u = FC.normalize($("#u").value);
+  if (!u){ $("#u").setCustomValidity("Enter a link like client.com"); $("#u").reportValidity(); return; }
+  $("#u").setCustomValidity(""); $("#u").value = u; S.url = u; FC.addRecent(u);
+  P.devices = []; load(); S.at = 0; vp && vp.setUrl(u); renderAll();
+});
+$("#u").addEventListener("input", e => e.target.setCustomValidity(""));
+
+/* Export */
+const pop = $("#pop");
+$("#exportBtn").addEventListener("click", () => { pop.hidden = !pop.hidden; $("#exportBtn").setAttribute("aria-expanded", String(!pop.hidden)); });
+document.addEventListener("click", e => { if (!e.target.closest(".menu")){ pop.hidden = true; $("#exportBtn").setAttribute("aria-expanded", "false"); } });
+function rows(){
+  return S.devices.map(id => { const d = FC.byId(id), res = S.res[id] || {checks:{}, note:""};
+    return {device:d.name, width:d.w, height:d.h, type:d.type, status:status(id).s, ...Object.fromEntries(CHECKS.map(c => [c.k, res.checks[c.k] || ""])), note:res.note || ""}; });
+}
+function download(name, text, type){
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([text], {type})); a.download = name;
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+const fileBase = () => "fitcheck-qa-" + (FC.host(S.url) || "site").replace(/[^a-z0-9.-]/gi, "_") + "-" + new Date().toISOString().slice(0, 10);
+pop.addEventListener("click", async e => {
+  const x = e.target.closest("[data-x]")?.dataset.x; if (!x) return;
+  pop.hidden = true;
+  if (x === "copy"){
+    const lines = [`Responsive check: ${S.url || "(no link)"}`, `Date: ${new Date().toLocaleDateString()}`, ""];
+    rows().forEach(r => {
+      lines.push(`${r.status === "pass" ? "✔" : r.status === "issue" ? "✘" : "…"} ${r.device} (${r.width}×${r.height})`);
+      CHECKS.forEach(c => { if (r[c.k] === "fail") lines.push(`   - Issue: ${c.t}`); });
+      if (r.note) lines.push(`   Note: ${r.note}`);
+    });
+    const ok = await FC.copy(lines.join("\n")); FC.toast(ok ? "Report copied. Paste it into an email or ticket." : "Copy failed.");
+  }
+  if (x === "csv"){
+    const head = ["device","width","height","type","status",...CHECKS.map(c => c.k),"note"];
+    const esc = v => `"${String(v).replace(/"/g, '""')}"`;
+    download(fileBase() + ".csv", [head.join(","), ...rows().map(r => head.map(h => esc(r[h])).join(","))].join("\n"), "text/csv");
+  }
+  if (x === "json") download(fileBase() + ".json", JSON.stringify({url:S.url, date:new Date().toISOString(), checks:CHECKS, results:rows()}, null, 2), "application/json");
+  if (x === "reset"){ S.res = {}; renderAll(); FC.toast("Results cleared for this link."); }
+});
+document.addEventListener("keydown", e => {
+  if (e.target.closest("input,textarea,select")) return;
+  if (e.key === "ArrowRight" || e.key === "n") $("#next").click();
+  if (e.key === "ArrowLeft" || e.key === "p") $("#prev").click();
+  if (e.key === "Escape") pop.hidden = true;
+});
+let rt = 0; window.addEventListener("resize", () => { cancelAnimationFrame(rt); rt = requestAnimationFrame(renderDevice); });
+
+$("#u").value = S.url; load(); renderAll();
+FC.designNav(3);
+</script>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fitcheck · Showcase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Design 2 · Showcase. Dark presentation scene: laptop, tablet and phone arranged as one live mockup for client meetings. */
+:root{
+  --ui:#101216; --ui-2:#1A1D23; --line:#2B2F37; --ink:#ECEEF2; --muted:#959BA6; --accent:#F5B544; --accent-ink:#1A1306;
+  --fc-frame:#0B0C0F; --fc-edge:#3A3F48; --fc-load-bg:#1A1D23; --fc-load-ink:#959BA6; --fc-shadow:0 40px 80px -30px rgba(0,0,0,.75);
+  --fc-toast-bg:#ECEEF2; --fc-toast-ink:#101216; --fc-dialog-bg:#1A1D23; --fc-dialog-ink:#ECEEF2; --fc-dialog-btn:#F5B544; --fc-dialog-btn-ink:#1A1306;
+  --f:"Sora",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  color-scheme:dark;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;display:grid;grid-template-rows:auto minmax(0,1fr);color:var(--ink);font:14px/1.45 var(--f);background:var(--ui);
+  padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--ui);border-bottom:1px solid var(--line);flex-wrap:wrap;z-index:5}
+.logo{font-weight:700;font-size:16px;letter-spacing:-.02em;color:inherit;text-decoration:none;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.logo i{width:16px;height:12px;border:2px solid var(--accent);border-radius:2px;position:relative}
+.logo i::after{content:"";position:absolute;left:-4px;right:-4px;bottom:-5px;height:2px;background:var(--accent);border-radius:2px}
+form.url{flex:1;min-width:220px;max-width:560px;display:flex;background:var(--ui-2);border:1px solid var(--line);border-radius:10px}
+form.url:focus-within{border-color:var(--accent)}
+form.url input{flex:1;min-width:0;border:0;background:none;padding:9px 12px;outline:none}
+form.url button{margin:3px;border:0;border-radius:8px;background:var(--accent);color:var(--accent-ink);font-weight:700;padding:6px 14px;cursor:pointer}
+.slots{display:flex;gap:6px}
+.slots label{display:flex;align-items:center;gap:6px;background:var(--ui-2);border:1px solid var(--line);border-radius:9px;padding:0 4px 0 10px;color:var(--muted);font-size:12px}
+.slots select{border:0;background:var(--ui-2);padding:7px 4px;max-width:150px;cursor:pointer;color:var(--ink);font-size:13px}
+.bgs{display:flex;gap:5px;align-items:center}
+.bgs button{width:24px;height:24px;border-radius:7px;border:2px solid var(--line);cursor:pointer;padding:0}
+.bgs button[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 2px var(--ui)}
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--ui-2);border-radius:9px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;color:var(--ink)}
+.btn:hover{border-color:#454B56}
+.btn.hot{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.grow{flex:1}
+
+.scene{position:relative;overflow:hidden;display:grid;place-items:center;transition:background .3s}
+.scene[data-bg="spot"]{background:radial-gradient(70% 60% at 50% 38%,#2A2F38 0%,#14161B 55%,#0B0C0F 100%)}
+.scene[data-bg="graphite"]{background:linear-gradient(180deg,#24272D,#16181C)}
+.scene[data-bg="ocean"]{background:radial-gradient(80% 70% at 30% 20%,#1F4E79 0%,#0F2236 55%,#0A1522 100%)}
+.scene[data-bg="paper"]{background:radial-gradient(80% 70% at 50% 30%,#FFFFFF 0%,#EFEAE2 70%,#E3DCD1 100%)}
+.scene[data-bg="sunset"]{background:linear-gradient(135deg,#F7C59F 0%,#EF8A62 45%,#B9475F 100%)}
+.scene[data-bg="paper"] .cap,.scene[data-bg="sunset"] .cap{color:#2B2620}
+.comp{position:relative;width:1600px;height:980px;flex:none;transform-origin:center center}
+.slot{position:absolute;display:flex;flex-direction:column;align-items:center}
+.lap{background:linear-gradient(#1B1D22,#0B0C0F);border:1px solid #3A3F48;border-radius:20px 20px 6px 6px;padding:16px 16px 22px;position:relative}
+.lap::before{content:"";position:absolute;top:6px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:#2E333B}
+.lap .fc-vp.fc-none{border:0}
+.deck{width:calc(100% + 120px);height:22px;margin-top:-1px;border-radius:2px 2px 14px 14px;background:linear-gradient(#C9CDD3,#8E949C 70%,#6B7078);box-shadow:0 30px 60px -20px rgba(0,0,0,.7)}
+.deck::after{content:"";display:block;width:18%;height:7px;margin:0 auto;border-radius:0 0 8px 8px;background:#9EA3AA}
+.cap{margin-top:16px;font-size:15px;font-weight:600;color:#C9CED6;letter-spacing:.01em;white-space:nowrap}
+.cap small{font-weight:400;opacity:.65;margin-left:6px}
+.nocap .cap{display:none}
+.hint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);font-size:12.5px;color:var(--muted);background:rgba(16,18,22,.75);padding:6px 12px;border-radius:999px;white-space:nowrap;pointer-events:none}
+body.present{grid-template-rows:0 minmax(0,1fr)}
+body.present .bar{display:none}
+body.present .hint,body.present .fc-nav{display:none}
+@media (max-width:900px){ .slots{order:5;flex-basis:100%;overflow-x:auto} .bar .lbl{display:none} }
+@media (prefers-reduced-motion:reduce){ .scene{transition:none} }
+</style>
+</head>
+<body>
+<div class="bar">
+  <a class="logo" href="index.html"><i></i>Fitcheck <span style="color:var(--muted);font-weight:400">showcase</span></a>
+  <form class="url" id="f" role="search"><input id="u" type="text" inputmode="url" autocomplete="off" spellcheck="false" placeholder="Client's website link" aria-label="Website link"><button type="submit">Show</button></form>
+  <div class="slots">
+    <label>Laptop<select id="sLap" aria-label="Laptop size"></select></label>
+    <label>Tablet<select id="sTab" aria-label="Tablet model"></select></label>
+    <label>Phone<select id="sPh" aria-label="Phone model"></select></label>
+  </div>
+  <div class="bgs" id="bgs" role="group" aria-label="Background"></div>
+  <span class="grow"></span>
+  <button class="btn" id="labels" type="button" aria-pressed="true"><span class="lbl">Labels</span><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h10M4 17h7"/></svg></button>
+  <button class="btn" id="reload" type="button" title="Reload all" aria-label="Reload all"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg></button>
+  <button class="btn" id="share" type="button"><span class="lbl">Share</span><svg viewBox="0 0 24 24"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1"/></svg></button>
+  <button class="btn" id="help" type="button" title="Site not loading?" aria-label="Site not loading?">?</button>
+  <button class="btn hot" id="present" type="button"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>Present</button>
+</div>
+
+<div class="scene" id="scene" data-bg="spot">
+  <div class="comp" id="comp"></div>
+  <div class="hint" id="hint">Pages are live: scroll and click inside any device.</div>
+</div>
+
+<script>/*@CORE*/</script>
+<script>
+const $ = s => document.querySelector(s);
+const BGS = [
+  {id:"spot", name:"Spotlight", sw:"radial-gradient(#3A404B,#0B0C0F)"},
+  {id:"graphite", name:"Graphite", sw:"#1F2226"},
+  {id:"ocean", name:"Ocean", sw:"linear-gradient(135deg,#1F4E79,#0A1522)"},
+  {id:"paper", name:"Paper", sw:"#EFEAE2"},
+  {id:"sunset", name:"Sunset", sw:"linear-gradient(135deg,#F7C59F,#B9475F)"}
+];
+const P = FC.readParams();
+const pick = (id, type, def) => { const d = FC.byId(id); return d && d.type === type ? id : def; };
+const S = {url:P.url, lap:pick(P.get("laptop"), "Desktop", "lap1440"), tab:pick(P.get("tablet"), "Tablet", "ipad"), ph:pick(P.get("phone"), "Mobile", "ip17p"),
+  bg:BGS.some(b => b.id === P.get("bg")) ? P.get("bg") : "spot", labels:P.get("labels") !== "no", scrolling:P.scrolling};
+const comp = $("#comp"), scene = $("#scene");
+const V = {};
+
+function opts(sel, type, val){
+  const list = FC.ofType(type);
+  sel.innerHTML = list.map(d => `<option value="${d.id}">${d.name}</option>`).join(""); sel.value = val;
+}
+/* Fixed composition (1600 × 980 units) that is scaled as a whole to fit the window */
+function build(){
+  comp.innerHTML = "";
+  const lapD = FC.byId(S.lap), tabD = FC.byId(S.tab), phD = FC.byId(S.ph);
+  // Laptop: screen ~900 units wide whatever the resolution
+  const ls = 900 / lapD.w;
+  V.lap = FC.viewport({url:S.url, scrolling:S.scrolling, label:lapD.name, emptyText:"Paste the client's link above"});
+  V.lap.set({w:lapD.w, h:lapD.h, s:ls, shape:"none"});
+  const lap = document.createElement("div"); lap.className = "slot"; lap.style.cssText = `left:${800 - 466}px;top:70px`;
+  const body = document.createElement("div"); body.className = "lap"; body.appendChild(V.lap.el);
+  const deck = document.createElement("div"); deck.className = "deck";
+  lap.append(body, deck); lap.insertAdjacentHTML("beforeend", `<div class="cap">${lapD.name}<small>${lapD.w} × ${lapD.h}</small></div>`);
+  // Tablet front-left, phone front-right (same scale so their sizes compare honestly)
+  const ms = .34;
+  V.tab = FC.viewport({url:S.url, scrolling:S.scrolling, label:tabD.name, emptyText:" "});
+  V.tab.set({w:tabD.w, h:tabD.h, s:ms * 1.05, shape:tabD.shape});
+  const tab = document.createElement("div"); tab.className = "slot"; tab.style.cssText = `left:150px;top:${960 - tabD.h * ms * 1.05 - 70}px`;
+  tab.appendChild(V.tab.el); tab.insertAdjacentHTML("beforeend", `<div class="cap">${tabD.name}<small>${tabD.w} × ${tabD.h}</small></div>`);
+  V.ph = FC.viewport({url:S.url, scrolling:S.scrolling, label:phD.name, emptyText:" "});
+  V.ph.set({w:phD.w, h:phD.h, s:ms * 1.25, shape:phD.shape});
+  const ph = document.createElement("div"); ph.className = "slot"; ph.style.cssText = `left:${1600 - 150 - phD.w * ms * 1.25}px;top:${960 - phD.h * ms * 1.25 - 70}px`;
+  ph.appendChild(V.ph.el); ph.insertAdjacentHTML("beforeend", `<div class="cap">${phD.name}<small>${phD.w} × ${phD.h}</small></div>`);
+  comp.append(lap, tab, ph);
+  fit(); save();
+}
+function fit(){
+  const k = Math.min(scene.clientWidth / 1600, scene.clientHeight / 980) * .96;
+  comp.style.transform = `scale(${k})`;
+  comp.style.margin = `${(980 * k - 980) / 2}px ${(1600 * k - 1600) / 2}px`;
+}
+function ui(){
+  scene.dataset.bg = S.bg;
+  $("#bgs").innerHTML = BGS.map(b => `<button type="button" data-b="${b.id}" title="${b.name}" aria-label="${b.name} background" aria-pressed="${b.id === S.bg}" style="background:${b.sw}"></button>`).join("");
+  comp.classList.toggle("nocap", !S.labels);
+  $("#labels").setAttribute("aria-pressed", String(S.labels));
+}
+function save(){
+  FC.writeParams({url:S.url, laptop:S.lap === "lap1440" ? "" : S.lap, tablet:S.tab === "ipad" ? "" : S.tab, phone:S.ph === "ip17p" ? "" : S.ph,
+    bg:S.bg === "spot" ? "" : S.bg, labels:S.labels ? "" : "no", scrolling:S.scrolling});
+}
+
+$("#f").addEventListener("submit", e => {
+  e.preventDefault();
+  const u = FC.normalize($("#u").value);
+  if (!u){ $("#u").setCustomValidity("Enter a link like client.com"); $("#u").reportValidity(); return; }
+  $("#u").setCustomValidity(""); $("#u").value = u; S.url = u; FC.addRecent(u);
+  Object.values(V).forEach(v => v.setUrl(u)); save();
+});
+$("#u").addEventListener("input", e => e.target.setCustomValidity(""));
+$("#sLap").addEventListener("change", e => { S.lap = e.target.value; build(); });
+$("#sTab").addEventListener("change", e => { S.tab = e.target.value; build(); });
+$("#sPh").addEventListener("change", e => { S.ph = e.target.value; build(); });
+$("#bgs").addEventListener("click", e => { const b = e.target.closest("[data-b]"); if (b){ S.bg = b.dataset.b; ui(); save(); } });
+$("#labels").addEventListener("click", () => { S.labels = !S.labels; ui(); save(); });
+$("#reload").addEventListener("click", () => Object.values(V).forEach(v => v.reload()));
+$("#share").addEventListener("click", FC.share);
+$("#help").addEventListener("click", FC.help);
+function present(on){
+  document.body.classList.toggle("present", on);
+  if (on){ FC.toast("Presenting. Press Esc to exit."); document.documentElement.requestFullscreen?.().catch(() => {}); }
+  else if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+  requestAnimationFrame(fit);
+}
+$("#present").addEventListener("click", () => present(true));
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("present")) present(false); });
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && document.body.classList.contains("present")) present(false); });
+let rt = 0; window.addEventListener("resize", () => { cancelAnimationFrame(rt); rt = requestAnimationFrame(fit); });
+
+$("#u").value = S.url;
+opts($("#sLap"), "Desktop", S.lap); opts($("#sTab"), "Tablet", S.tab); opts($("#sPh"), "Mobile", S.ph);
+ui(); build();
+FC.designNav(2);
+</script>
+</body>
+</html>
