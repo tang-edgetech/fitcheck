@@ -1,0 +1,3 @@
+
+# Server-only deploy/watchdog settings (bot token)
+deploy/deploy.env

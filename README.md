@@ -10,6 +10,8 @@ Paste a link and see the site on phones, tablets, laptops and TVs side by side. 
 
 The browser only talks to Next.js. Next.js proxies `/api/*` and `/sanctum/*` to Laravel (`BACKEND_URL`, default `http://127.0.0.1:8000`), so cookies and CSRF stay same-origin.
 
+**Going live on cPanel:** see [docs/DEPLOY-CPANEL.md](docs/DEPLOY-CPANEL.md) (site at fitcheck.smartsitecp.com, API at fitcheck-api.smartsitecp.com).
+
 ## First-time setup
 
 Requires PHP 8.3+, Composer, Node 20+, and MySQL/MariaDB (XAMPP works).

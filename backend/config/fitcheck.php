@@ -7,6 +7,9 @@ return [
      */
     'default_password' => env('DEFAULT_ADMIN_PASSWORD', 'Admin@1234'),
 
+    /* IPs of the Next.js server that proxies the API (comma separated). Local: 127.0.0.1. cPanel: the server's IP. */
+    'trusted_proxies' => env('TRUSTED_PROXIES', '127.0.0.1,::1'),
+
     'seed_accounts' => [
         ['username' => 'dev-admin', 'role' => 'developer'],
         ['username' => 'dev-admin-1', 'role' => 'developer'],

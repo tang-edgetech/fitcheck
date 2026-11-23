@@ -23,8 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Session cookies + CSRF for the Next.js app (same-site SPA auth)
         $middleware->statefulApi();
-        // The Next.js dev/prod server proxies /api and /sanctum, so trust its forwarded headers from localhost
-        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
+        // The Next.js server proxies /api and /sanctum; trust its forwarded headers (TRUSTED_PROXIES in .env)
+        $middleware->replace(\Illuminate\Http\Middleware\TrustProxies::class, \App\Http\Middleware\TrustConfiguredProxies::class);
         $middleware->append(SecurityHeaders::class);
         $middleware->alias([
             'audit' => AuditMutations::class,

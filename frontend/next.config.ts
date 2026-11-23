@@ -11,6 +11,9 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  // cPanel (Setup Node.js App) runs a self-contained server.js; `npm run build:cpanel` turns this on.
+  // Note: the /api rewrite target (BACKEND_URL) is fixed at build time in this mode.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
   cacheComponents: true,
   partialPrefetching: true,
   poweredByHeader: false,

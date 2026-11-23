@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# cPanel package (npm run build:cpanel)
+/dist-cpanel
+/fitcheck-frontend.zip
