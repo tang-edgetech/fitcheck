@@ -114,7 +114,7 @@ if [[ $DO_API -eq 1 ]]; then
   # Keeps the server's .env, storage (logs, sessions), vendor and the public .htaccess (it may hold an IP allow-list)
   rsync -a --delete \
     --exclude '.env' --exclude 'storage/' --exclude 'vendor/' --exclude 'bootstrap/cache/*.php' \
-    --exclude 'public/.htaccess' --exclude 'node_modules/' \
+    --exclude 'public/.htaccess' --exclude 'node_modules/' --exclude '.well-known/' --exclude 'cgi-bin/' \
     "$SRC_DIR/backend/" "$API_DIR/"
   # storage/ is excluded above so logs and sessions survive; this only adds folders/files that are missing
   # (e.g. on a fresh server), never overwriting what's there
@@ -147,8 +147,8 @@ if [[ $DO_SITE -eq 1 ]]; then
   )
 
   step "Install site files"
-  # Keeps Passenger's tmp/ and logs; the app's .htaccess lives in the domain folder, not here
-  rsync -a --delete --exclude 'tmp/' --exclude 'stderr.log' --exclude '.htaccess' \
+  # Keeps Passenger's tmp/ and log, the .htaccess cPanel writes for the app (plus your own lines), and AutoSSL's .well-known/
+  rsync -a --delete --exclude 'tmp/' --exclude 'stderr.log' --exclude '.htaccess' --exclude '.well-known/' --exclude 'cgi-bin/' \
     "$SRC_DIR/frontend/dist-cpanel/" "$WEB_DIR/"
 
   step "Restart site"

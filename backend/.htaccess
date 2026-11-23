@@ -1,0 +1,25 @@
+# Protects the Laravel folder when it sits inside a web folder (e.g. public_html/…/backend on cPanel).
+# Only public/ may be reached from the web; .env, vendor/, storage/ and the rest stay private.
+# Works whether the API subdomain's document root is backend/public (recommended) or backend/.
+
+# The Node.js app's settings live in a parent folder's .htaccess; keep them from taking over the API
+<IfModule mod_passenger.c>
+    PassengerEnabled off
+</IfModule>
+
+# Never serve hidden files such as .env or .git
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    # Everything is answered from public/ (Laravel's front controller is public/index.php)
+    RewriteCond %{REQUEST_URI} !/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Without mod_rewrite, refuse everything rather than expose the app's files
+<IfModule !mod_rewrite.c>
+    Require all denied
+</IfModule>
