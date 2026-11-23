@@ -204,7 +204,13 @@ chmod 600 .env
 The domain points at `frontend/` (Step 2), but the site **runs** from its built copy in `frontend/dist-cpanel/`. So that's where the Node.js app's root goes.
 
 ### 6a. Create the Node.js app
-cPanel → **Setup Node.js App** → **Create Application**:
+`dist-cpanel/` isn't in git; the build in 6b creates its contents. Create the empty folder first, so cPanel can use it as the app root:
+
+```bash
+mkdir -p ~/public_html/fitcheck.smartsitecp.com/frontend/dist-cpanel
+```
+
+Then cPanel → **Setup Node.js App** → **Create Application**:
 
 | Field | Value |
 |---|---|
