@@ -45,8 +45,10 @@ next-env.d.ts
 /fitcheck-frontend.zip
 
 # Added on the server by cPanel (Setup Node.js App, AutoSSL); frontend/ is the domain's document root
-/.htaccess
 /.well-known
 /cgi-bin
 /tmp
 /stderr.log
+
+# Static build (npm run build:static)
+/fitcheck-site.zip

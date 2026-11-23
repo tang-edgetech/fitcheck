@@ -6,6 +6,7 @@ import { App, AutoComplete, Button, Checkbox, ConfigProvider, Input, Modal, Popo
 import { AppstoreOutlined, ColumnWidthOutlined, DownOutlined, LeftOutlined, LinkOutlined, QuestionCircleOutlined, ReloadOutlined, RightOutlined } from "@ant-design/icons";
 import DeviceFrame, { fitScale, hostOf } from "./DeviceFrame";
 import type { Device, PublicFamily } from "@/lib/types";
+import { API_BASE } from "@/lib/api";
 
 type SizeMode = "true" | "fill";
 type View = "scroll" | "grid";
@@ -77,7 +78,7 @@ function TesterInner() {
     setView(v === "grid" ? "grid" : "scroll"); setCard((["s", "m", "l"].includes(q.get("card") ?? "") ? q.get("card") : "m") as Card); setScrolling(q.get("scrolling") !== "no"); setRot(q.get("rotate") === "yes");
     const o = (q.get("only") || "").split(",").filter(Boolean); setOnly(o.length ? o : null);
     setRecent(readRecent());
-    fetch("/api/public/screen-views", { headers: { Accept: "application/json" }, cache: "no-cache" })
+    fetch(API_BASE + "/api/public/screen-views", { headers: { Accept: "application/json" }, cache: "no-cache" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((d: { families: PublicFamily[]; site?: Partial<SiteInfo> }) => {
         if (!Array.isArray(d?.families)) throw new Error("bad shape");

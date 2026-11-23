@@ -12,7 +12,7 @@ fi
 set -a; source "$CONFIG_FILE"; set +a
 
 : "${GIT_BRANCH:=main}" "${FAIL_THRESHOLD:=2}" "${SSL_WARN_DAYS:=14}" "${DISK_WARN_PCT:=90}" "${HTTP_TIMEOUT:=20}"
-: "${STATE_DIR:=$HOME/fitcheck-deploy-state}" "${PHP_BIN:=php}" "${COMPOSER_BIN:=composer}"
+: "${SITE_MODE:=node}" "${STATE_DIR:=$HOME/fitcheck-deploy-state}" "${PHP_BIN:=php}" "${COMPOSER_BIN:=composer}"
 mkdir -p "$STATE_DIR"
 
 HOST_LABEL="$(hostname -s 2>/dev/null || echo server)"

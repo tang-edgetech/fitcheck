@@ -1,9 +1,12 @@
 # The repository folder sits inside public_html (public_html/fitcheck.smartsitecp.com, a git clone).
 # Only these are meant for the web, each through its own subdomain:
-#   fitcheck.smartsitecp.com      → document root frontend/      (the Node.js app runs from frontend/dist-cpanel)
+#   fitcheck.smartsitecp.com      → document root frontend/      (frontend/.htaccess serves the built site in frontend/out/)
 #   fitcheck-api.smartsitecp.com  → document root backend/public (protected further by backend/.htaccess)
 # Everything else answers 404. Apache applies this file to the subfolders too; the patterns only match
 # paths that no page of the site or the API uses.
+
+# Never list folder contents (e.g. frontend/ before the Node.js app is connected shows 403, not "Index of")
+Options -Indexes
 
 <IfModule mod_alias.c>
     # Git history, deploy settings (Telegram token), docs — from any address

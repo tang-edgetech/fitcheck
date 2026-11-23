@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
-// The Laravel API. The browser only talks to Next.js; /api and /sanctum are proxied,
-// so session cookies and CSRF stay same-origin (no CORS, no tokens in JavaScript).
+// Three ways to build:
+//   npm run dev / build / start   Next.js server proxies /api and /sanctum to Laravel (same-origin cookies).
+//   npm run build:cpanel          The same, as a self-contained server.js for cPanel "Setup Node.js App".
+//   npm run build:static          Plain HTML/JS files for hosting without Node.js (frontend/out/). The browser then
+//                                 calls the API subdomain directly (NEXT_PUBLIC_API_URL; Laravel allows it via CORS).
+//                                 Redirects, rewrites and headers need a server, so Apache does those (frontend/.htaccess).
+const MODE = process.env.NEXT_OUTPUT;
+const STATIC = MODE === "export";
+
+// The Laravel API, for the proxy in server modes. Fixed at build time with build:cpanel.
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://127.0.0.1:8000";
 
 const securityHeaders = [
@@ -10,23 +18,9 @@ const securityHeaders = [
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
 ];
 
-const nextConfig: NextConfig = {
-  // cPanel (Setup Node.js App) runs a self-contained server.js; `npm run build:cpanel` turns this on.
-  // Note: the /api rewrite target (BACKEND_URL) is fixed at build time in this mode.
-  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
-  cacheComponents: true,
-  partialPrefetching: true,
-  poweredByHeader: false,
-  turbopack: {
-    rules: {
-      "*.css": {
-        loaders: ["@tailwindcss/turbopack"],
-        as: "*.css",
-      },
-    },
-  },
+const serverOnly: Partial<NextConfig> = {
   async redirects() {
-    // Settings has one route per tab; the bare URL opens the first tab
+    // Settings has one route per tab; the bare URL opens the first tab (static builds redirect in the page itself)
     return [{ source: "/admin/settings", destination: "/admin/settings/general", permanent: false }];
   },
   async rewrites() {
@@ -42,6 +36,23 @@ const nextConfig: NextConfig = {
       { source: "/admin/:path*", headers: [{ key: "Content-Security-Policy", value: "frame-ancestors 'self'" }, { key: "X-Frame-Options", value: "SAMEORIGIN" }] },
     ];
   },
+};
+
+const nextConfig: NextConfig = {
+  output: STATIC ? "export" : MODE === "standalone" ? "standalone" : undefined,
+  // Static files: /admin/login/ → admin/login/index.html, which any web server can serve
+  trailingSlash: STATIC,
+  images: { unoptimized: STATIC },
+  poweredByHeader: false,
+  turbopack: {
+    rules: {
+      "*.css": {
+        loaders: ["@tailwindcss/turbopack"],
+        as: "*.css",
+      },
+    },
+  },
+  ...(STATIC ? {} : serverOnly),
 };
 
 export default nextConfig;

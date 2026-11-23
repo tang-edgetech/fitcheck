@@ -1,6 +1,12 @@
 "use client";
 
-/** Thin client for the Laravel API (proxied at /api by next.config.ts). Uses the session cookie + CSRF token. */
+/** Thin client for the Laravel API. Uses the session cookie + CSRF token. */
+
+/**
+ * Where the API lives. Empty (the default): the Next.js server proxies /api and /sanctum (local dev, Node.js hosting).
+ * Static builds (npm run build:static) set NEXT_PUBLIC_API_URL, e.g. https://fitcheck-api.smartsitecp.com, and call it directly.
+ */
+export const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "").replace(/\/+$/, "");
 
 export class ApiError extends Error {
   status: number;
@@ -25,7 +31,7 @@ function readCookie(name: string) {
   return m ? decodeURIComponent(m[1]) : "";
 }
 async function ensureCsrf(force = false) {
-  if (force || !readCookie("XSRF-TOKEN")) await fetch("/sanctum/csrf-cookie", { credentials: "include" });
+  if (force || !readCookie("XSRF-TOKEN")) await fetch(API_BASE + "/sanctum/csrf-cookie", { credentials: "include" });
 }
 function qs(q?: Query) {
   if (!q) return "";
@@ -45,7 +51,7 @@ export const AUTH_EVENT = "fitcheck:auth";
 async function request(path: string, o: Opts, retried = false): Promise<Response> {
   const method = (o.method ?? "GET").toUpperCase();
   if (method !== "GET") await ensureCsrf();
-  const res = await fetch("/api" + path + qs(o.query), {
+  const res = await fetch(API_BASE + "/api" + path + qs(o.query), {
     method,
     credentials: "include",
     signal: o.signal,

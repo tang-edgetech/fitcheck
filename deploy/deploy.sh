@@ -161,7 +161,17 @@ if [[ $DO_API -eq 1 ]]; then
   (cd "$API_DIR" && $PHP_BIN artisan up); MAINTENANCE=0
 fi
 
-if [[ $DO_SITE -eq 1 ]]; then
+if [[ $DO_SITE -eq 1 && "$SITE_MODE" == static ]]; then
+  # Hosting without Node.js: build plain files into frontend/out/ (frontend/.htaccess serves them). Nothing to restart.
+  step "Build static site"
+  (
+    # shellcheck disable=SC1090
+    [[ -n "${NODE_ACTIVATE:-}" && -f "$NODE_ACTIVATE" ]] && source "$NODE_ACTIVATE"
+    cd "$SRC_DIR/frontend"
+    npm ci --no-audit --no-fund --loglevel=error
+    NO_ZIP=1 NEXT_PUBLIC_API_URL="$API_URL" npm run build:static
+  )
+elif [[ $DO_SITE -eq 1 ]]; then
   step "Build site"
   (
     # shellcheck disable=SC1090
@@ -188,6 +198,8 @@ if [[ $DO_SITE -eq 1 ]]; then
   fi
 fi
 
+# Static hosting: the browser calls the API address directly; with Node.js the site forwards /api itself
+API_CHECK_URL=$([[ "$SITE_MODE" == static ]] && echo "$API_URL" || echo "$SITE_URL")
 step "Check the live site"
 ok=0
 for _ in 1 2 3 4 5 6; do

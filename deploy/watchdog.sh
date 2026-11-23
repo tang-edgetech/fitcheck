@@ -111,7 +111,12 @@ check_laravel_log() {
 
 check_http site "Tester (public site)" "$SITE_URL/"
 check_http admin "Admin sign-in page" "$SITE_URL/admin/login"
-check_http api_proxy "API through the site" "$SITE_URL/api/public/screen-views" '"families"'
+if [[ "$SITE_MODE" == static ]]; then
+  # Static hosting: the site calls the API address directly (with CORS), so check that
+  check_http api_proxy "API (device list)" "$API_URL/api/public/screen-views" '"families"'
+else
+  check_http api_proxy "API through the site" "$SITE_URL/api/public/screen-views" '"families"'
+fi
 check_http api_up "API health (/up)" "$API_URL/up"
 check_ssl ssl_site "$SITE_URL"
 check_ssl ssl_api "$API_URL"

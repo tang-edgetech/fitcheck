@@ -1,0 +1,13 @@
+# fitcheck.smartsitecp.com (document root: frontend/) on hosting WITHOUT Node.js.
+# The built site lives in out/ (npm run build:static, then upload); every address is answered from there,
+# so the source code in this folder is never served. out/.htaccess (written by the build) does the rest.
+#
+# With cPanel "Setup Node.js App" instead, delete this file: cPanel writes its own .htaccess here.
+
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^out/ - [L]
+    RewriteRule ^(.*)$ out/$1 [L]
+</IfModule>
