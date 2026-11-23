@@ -24,7 +24,8 @@ if (!/^https?:\/\//.test(api)) {
 }
 
 console.log(`Building static site with NEXT_PUBLIC_API_URL=${api} …`);
-rmSync(OUT, { recursive: true, force: true });
+// out/ is NOT cleared here: on the server it's the live site, so it keeps serving while Next.js compiles.
+// Next.js replaces it itself in the final export step (seconds); if the build fails, the live site stays as it was.
 const build = spawnSync("npx next build", { cwd: ROOT, stdio: "inherit", shell: true, env: { ...process.env, NEXT_OUTPUT: "export", NEXT_PUBLIC_API_URL: api } });
 if (build.status !== 0) process.exit(build.status ?? 1);
 if (!existsSync(join(OUT, "index.html"))) { console.error("Build finished but out/index.html is missing."); process.exit(1); }
