@@ -23,7 +23,7 @@ The server holds a git copy of the repository, exactly like your computer:
 | `C:\xampp\htdocs\fitcheck\` | `/home/cpadmin99/public_html/fitcheck.smartsitecp.com/` | The git copy (`git pull` here) |
 | `…\backend\` | `…/backend/` | The API. **Document root of `https://fitcheck-api.smartsitecp.com`: `…/backend/public`** |
 | `…\frontend\` | `…/frontend/` | Site source code. **Document root of `https://fitcheck.smartsitecp.com`: `…/frontend`** |
-| `…\frontend\out\` | `…/frontend/out/` | **The built site**, made by `npm run build:static` on your computer and uploaded. Not in git. `frontend/.htaccess` serves it at the domain root |
+| `…\frontend\out\` | `…/frontend/out/` | **The built site**, made by `npm run release` on your computer and committed to git, so `git pull` puts it live. `frontend/.htaccess` serves it at the domain root |
 | `…\deploy\` | `…/deploy/` | Auto-deploy and watchdog scripts (Step 9) |
 
 The site's **domain** points at `frontend/`. Its `.htaccess` (in git) answers every address from `frontend/out/`, the built copy inside it, so the source code is never served.
@@ -208,17 +208,19 @@ chmod 600 .env
 
 Your cPanel has no **Setup Node.js App**, so the site is built as plain files on your computer and Apache serves them. Every page of Fitcheck works this way. The browser then calls `https://fitcheck-api.smartsitecp.com` directly, and Laravel allows that for your site only, through the `CORS_ALLOWED_ORIGINS` and `SESSION_DOMAIN` lines in 5b.
 
-### 6a. Build on your computer
-In PowerShell, in `C:\xampp\htdocs\fitcheck\frontend`:
+### 6a. Build on your computer and push
+The server can't build the site (its Linux is too old for Next.js's compiler), so you build it and git carries it. After testing on localhost, in PowerShell in `C:\xampp\htdocs\fitcheck\frontend`:
 
 ```powershell
-$env:NEXT_PUBLIC_API_URL="https://fitcheck-api.smartsitecp.com"; npm run build:static
+npm run release
 ```
 
-This creates **`frontend/fitcheck-site.zip`** (about 2 MB).
+This builds `frontend/out/` for the live API (`https://fitcheck-api.smartsitecp.com`) and stages it. Then commit and push as usual. On the server, `git pull` (or the cron job in Step 9) puts it live: nothing to upload.
 
-### 6b. Upload
-File Manager → `public_html/fitcheck.smartsitecp.com/frontend`:
+> `npm run release` is only for the live site. For testing on localhost keep using `npm run dev` (or `npm run build` + `npm start`).
+
+### 6b. Upload by hand (only if git isn't an option)
+Run `$env:NEXT_PUBLIC_API_URL="https://fitcheck-api.smartsitecp.com"; npm run build:static`. It creates **`frontend/fitcheck-site.zip`** (about 2 MB). Then in File Manager → `public_html/fitcheck.smartsitecp.com/frontend`:
 1. Create a folder **`out`**. If it already exists, open it and delete its contents first.
 2. Open `out/`, **Upload** `fitcheck-site.zip`, right-click → **Extract**, then delete the zip.
 3. Check that `frontend/out/index.html` and `frontend/out/_next/` exist.
@@ -266,9 +268,9 @@ Then, depending on what changed:
   php artisan route:cache
   ```
   If `backend/composer.lock` changed, redo 5a first.
-- **`frontend/`:** on your computer, run `git pull`, then `$env:NEXT_PUBLIC_API_URL="https://fitcheck-api.smartsitecp.com"; npm run build:static`. Upload the new `fitcheck-site.zip` into `frontend/out/` as in 6b (delete the old contents first).
+- **`frontend/`:** nothing on the server. `git pull` already updated `frontend/out/`, as long as you ran `npm run release` before committing (6a).
 
-Step 9 does the `backend/` part automatically.
+Step 9 does all of this automatically.
 
 > Don't edit files that are tracked in git directly on the server, such as `backend/public/.htaccess`. `git pull` and `deploy.sh` would conflict with or undo those edits. Server-only settings belong in `backend/.env` and `deploy/deploy.env`.
 
@@ -276,7 +278,7 @@ Step 9 does the `backend/` part automatically.
 
 | Script | Cron | What it does |
 |---|---|---|
-| `deploy/deploy.sh` | every 5 min | If `main` on GitHub has new commits: updates the git copy, and in `backend/` runs migrations (in maintenance mode) and refreshes caches. With `DEPLOY_SITE=1` (only if the server has `npm`), it also rebuilds `frontend/out` when `frontend/` changed. Then it checks the live site. Posts 🚀 / ✅ / 🔴 to Telegram. Silent when nothing changed. |
+| `deploy/deploy.sh` | every 5 min | If `main` on GitHub has new commits: updates the git copy, and in `backend/` runs migrations (in maintenance mode) and refreshes caches. `frontend/out` (built on your computer with `npm run release`) goes live with the pull; if site code changed without a new build, the deploy log says so. Then it checks the live site. Posts 🚀 / ✅ / 🔴 to Telegram. Silent when nothing changed. |
 | `deploy/watchdog.sh` | every 5 min | Checks the tester, `/admin`, the API, HTTPS expiry, disk space and new Laravel errors. Posts 🔴 once when something fails twice in a row, and 🟢 when it recovers. |
 | `deploy/watchdog.sh --report` | daily | 📋 summary of every check. |
 
@@ -304,7 +306,7 @@ nano deploy.env
 ```
 
 The paths in the example already match this server. Check or fill in:
-- **`SITE_MODE=static`** and **`DEPLOY_SITE=0`** (the defaults): API changes deploy automatically; the site you build and upload yourself (Step 8).
+- **`SITE_MODE=static`** and **`DEPLOY_SITE=0`** (the defaults): the API and the committed site (`npm run release`, Step 6a) both deploy automatically. The server never builds anything.
 - **`COMPOSER_BIN`:** the result of `which composer`, run with PHP 8.3.
 - **Telegram:** the token, chat id and thread id from 9b.
 

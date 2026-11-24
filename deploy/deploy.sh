@@ -102,19 +102,33 @@ fi
 NOTE=""
 DO_API=0; DO_SITE=0
 grep -q '^backend/' <<<"$CHANGED" && DO_API=1
-grep -qE '^(frontend/|docs/handbook/)' <<<"$CHANGED" && DO_SITE=1
+# Site built on the PC and committed (npm run release): frontend/out/ in git goes live as it is, nothing to build
+SITE_FROM_GIT=0
+if [[ "$SITE_MODE" == static ]] && git cat-file -e "$REMOTE:frontend/out/index.html" 2>/dev/null; then
+  SITE_FROM_GIT=1
+  grep -q '^frontend/out/' <<<"$CHANGED" && DO_SITE=1
+  # Site code changed but no new build came with it: the live site keeps the previous build
+  if [[ $DO_SITE -eq 0 ]] && grep -E '^(frontend/|docs/handbook/)' <<<"$CHANGED" | grep -qvE '^frontend/(out/|scripts/|README|AGENTS|.htaccess|.gitignore)'; then
+    NOTE="Site code changed but frontend/out wasn't rebuilt: run npm run release on the PC, then commit and push."
+    log "$NOTE"
+  fi
+else
+  grep -qE '^(frontend/|docs/handbook/)' <<<"$CHANGED" && DO_SITE=1
+fi
 if [[ $FORCE -eq 1 ]]; then
   [[ "$ONLY" != "site" ]] && DO_API=1
   [[ "$ONLY" != "api" ]] && DO_SITE=1
 fi
 # DEPLOY_SITE=0 in deploy.env: the server doesn't build the site (e.g. not enough memory); upload it by hand instead
-if [[ "${DEPLOY_SITE:-1}" == 0 && $DO_SITE -eq 1 ]]; then
+if [[ $SITE_FROM_GIT -eq 1 ]]; then
+  : # nothing to build, so DEPLOY_SITE and Node.js don't matter
+elif [[ "${DEPLOY_SITE:-1}" == 0 && $DO_SITE -eq 1 ]]; then
   DO_SITE=0; NOTE="Site changed, but DEPLOY_SITE=0: build it locally and upload it."
   log "Site changed, but DEPLOY_SITE=0: build it locally with npm run build:cpanel and upload."
 fi
 # Node.js installed in the home folder (no root needed): ~/node/bin, see docs/DEPLOY-CPANEL.md
 [[ -x "$HOME/node/bin/npm" ]] && export PATH="$HOME/node/bin:$PATH"
-if [[ $DO_SITE -eq 1 ]] && ! command -v npm >/dev/null 2>&1 && [[ ! -f "${NODE_ACTIVATE:-/nonexistent}" ]]; then
+if [[ $SITE_FROM_GIT -eq 0 && $DO_SITE -eq 1 ]] && ! command -v npm >/dev/null 2>&1 && [[ ! -f "${NODE_ACTIVATE:-/nonexistent}" ]]; then
   DO_SITE=0; NOTE="Site changed, but Node.js (npm) isn't installed on the server: install it in ~/node, or set DEPLOY_SITE=0 and upload the site."
   log "$NOTE"
 fi
@@ -198,7 +212,11 @@ if [[ $DO_API -eq 1 ]]; then
   (cd "$API_DIR" && $PHP_BIN artisan up); MAINTENANCE=0
 fi
 
-if [[ $DO_SITE -eq 1 && "$SITE_MODE" == static ]]; then
+if [[ $DO_SITE -eq 1 && $SITE_FROM_GIT -eq 1 ]]; then
+  # git reset above already put the new build in frontend/out/ (it's live now); remove files the new build no longer has
+  step "Site updated from git (frontend/out)"
+  git -C "$SRC_DIR" clean -fdq -- frontend/out
+elif [[ $DO_SITE -eq 1 && "$SITE_MODE" == static ]]; then
   # Hosting without Node.js: build plain files into frontend/out/ (frontend/.htaccess serves them). Nothing to restart.
   step "Build static site"
   (

@@ -1,2 +1,6 @@
 # Shell scripts run on Linux servers: always LF
 *.sh text eol=lf
+
+# The built site (npm run release) is committed so the server can serve it without building.
+# Keep it byte-for-byte as built, and hide it from diffs and GitHub language stats.
+frontend/out/** -text -diff linguist-generated
