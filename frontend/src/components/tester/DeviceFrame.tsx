@@ -17,6 +17,8 @@ export function fitScale(availW: number, availH: number, w: number, h: number, s
 
 interface Props {
   url: string; w: number; h: number; s: number; shape: Frame; rot?: boolean; scrolling?: boolean; label?: string; emptyText?: string;
+  /** What the frame loads, when it isn't the link itself (the device view address) */
+  src?: string;
   /** Called once when this frame has loaded (or stopped waiting for it) */
   onReady?: () => void;
   /** Set by a parent that shows several frames together; without it the frame shows as soon as it loads */
@@ -24,14 +26,14 @@ interface Props {
 }
 
 /** A device frame with the site inside. Changing w/h/s only updates CSS variables, so the page never reloads. */
-export default function DeviceFrame({ url, w, h, s, shape, rot = false, scrolling = true, label = "Preview", emptyText = "Paste a link above", onReady, reveal }: Props) {
+export default function DeviceFrame({ url, src, w, h, s, shape, rot = false, scrolling = true, label = "Preview", emptyText = "Paste a link above", onReady, reveal }: Props) {
   const style = { "--w": w, "--h": h, "--s": s } as CSSProperties;
   // Keyed so the loading state and iframe reset when the link or scrolling setting changes
-  return <Inner key={`${url}|${scrolling}`} {...{ url, shape, rot, scrolling, label, emptyText, style, onReady, reveal }} />;
+  return <Inner key={`${src ?? url}|${scrolling}`} {...{ url, src: src ?? url, shape, rot, scrolling, label, emptyText, style, onReady, reveal }} />;
 }
 
-function Inner({ url, shape, rot, scrolling, label, emptyText, style, onReady, reveal }: {
-  url: string; shape: Frame; rot: boolean; scrolling: boolean; label: string; emptyText: string; style: CSSProperties; onReady?: () => void; reveal?: boolean;
+function Inner({ url, src, shape, rot, scrolling, label, emptyText, style, onReady, reveal }: {
+  url: string; src: string; shape: Frame; rot: boolean; scrolling: boolean; label: string; emptyText: string; style: CSSProperties; onReady?: () => void; reveal?: boolean;
 }) {
   const [loaded, setLoaded] = useState(false);
   const readyRef = useRef(onReady);
@@ -56,7 +58,7 @@ function Inner({ url, shape, rot, scrolling, label, emptyText, style, onReady, r
       <div className="device-screen fc-screen">
         {url && (
           <iframe
-            src={url}
+            src={src}
             title={`${label}: ${url}`}
             scrolling={scrolling ? "yes" : "no"}
             style={scrolling ? undefined : { overflow: "hidden" }}

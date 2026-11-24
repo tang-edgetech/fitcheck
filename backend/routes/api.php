@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Route;
 // Public: data for the tester page
 Route::get('public/screen-views', [PublicController::class, 'screenViews'])->middleware('throttle:120,1')->name('public.screen-views');
 Route::get('public/frame-check', [PublicController::class, 'frameCheck'])->middleware('throttle:30,1')->name('public.frame-check');
+// Device view: the page as a phone/tablet/computer/TV gets it (one request per device frame and per link clicked)
+Route::get('public/view', [\App\Http\Controllers\Api\DeviceViewController::class, 'show'])->middleware('throttle:600,1')->name('public.view');
 
 // Sign-in (these write their own audit rows)
 Route::prefix('auth')->middleware('audit.skip')->group(function () {

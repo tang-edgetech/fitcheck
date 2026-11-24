@@ -1,2 +1,2 @@
-Built 2026-11-24T06:48:33.557Z
+Built 2026-11-24T11:00:33.357Z
 NEXT_PUBLIC_API_URL=https://fitcheck-api.smartsitecp.com

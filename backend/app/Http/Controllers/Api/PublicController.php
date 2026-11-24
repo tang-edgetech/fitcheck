@@ -122,23 +122,30 @@ class PublicController extends Controller
 
     private static function isPublicHost(string $host): bool
     {
+        return static::publicIps($host) !== [];
+    }
+
+    /**
+     * The host's IP addresses, or [] if it has none or ANY of them is private/internal/reserved.
+     * IPv6 addresses come back in [brackets], ready for curl's CURLOPT_RESOLVE.
+     */
+    public static function publicIps(string $host): array
+    {
+        $host = trim($host, '[]');
         if ($host === '' || strcasecmp($host, 'localhost') === 0) {
-            return false;
+            return [];
         }
         $ips = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : array_merge(
             gethostbynamel($host) ?: [],
             array_column(@dns_get_record($host, DNS_AAAA) ?: [], 'ipv6'),
         );
-        if (! $ips) {
-            return false;
-        }
         foreach ($ips as $ip) {
             if (! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE)) {
-                return false;
+                return [];
             }
         }
 
-        return true;
+        return array_map(fn ($ip) => str_contains($ip, ':') ? "[$ip]" : $ip, $ips);
     }
 
     public static function bust(): void

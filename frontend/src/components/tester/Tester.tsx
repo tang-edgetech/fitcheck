@@ -17,6 +17,7 @@ const CARD_H: Record<Card, number> = { s: 340, m: 480, l: 640 };
 const RECENT_KEY = "fitcheck-recent";
 const VIEW_KEY = "fitcheck-view";
 const SYNC_KEY = "fitcheck-sync-scroll";
+const DEVICE_VIEW_KEY = "fitcheck-device-view";
 
 interface SiteInfo { name: string; default_view: View; default_size: SizeMode; banner: string | null; help_email: string | null }
 const DEFAULT_SITE: SiteInfo = { name: "Fitcheck", default_view: "scroll", default_size: "true", banner: null, help_email: null };
@@ -29,6 +30,14 @@ function normalize(u: string) {
 }
 function readRecent(): string[] { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]").slice(0, 8); } catch { return []; } }
 function dims(d: Device, rot: boolean) { return rot ? { w: d.h, h: d.w } : { w: d.w, h: d.h }; }
+/** Which browser identity the device view uses for this device (see DeviceViewController on the API) */
+function agentOf(d: Device) {
+  const apple = /apple|iphone|ipad|mac/i.test(`${d.brand} ${d.name}`);
+  if (d.type === "Mobile") return apple ? "iphone" : "android";
+  if (d.type === "Tablet") return apple ? "ipad" : "android-tablet";
+  if (d.type === "TV") return "tv";
+  return apple ? "mac" : "desktop";
+}
 
 const theme = {
   token: { colorPrimary: "#e0532b", colorText: "#2a1d17", colorTextSecondary: "#7a6a60", colorBorder: "#f0dfd3", borderRadius: 12, fontFamily: "var(--font-dm-sans), system-ui, sans-serif" },
@@ -59,6 +68,8 @@ function TesterInner() {
   const [rot, setRot] = useState(false);
   const [focus, setFocus] = useState(-1);
   const [reloadKey, setReloadKey] = useState(0);
+  /** Device view: each device loads the page as that device (through the API), so server-side mobile detection works */
+  const [deviceView, setDeviceView] = useState(true);
   const [recent, setRecent] = useState<string[]>([]);
   const [helpOpen, setHelpOpen] = useState(false);
   /** Devices ticked in the active group's checklist; null = all of them */
@@ -76,6 +87,9 @@ function TesterInner() {
     const u = normalize(q.get("url") || "");
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync from the address bar
     setUrl(u); setInput(u); setGroup(q.get("group") || ""); setSize(askedSize === "fill" ? "fill" : "true");
+    let dv = q.get("as");
+    if (!dv) { try { dv = localStorage.getItem(DEVICE_VIEW_KEY); } catch { dv = null; } }
+    setDeviceView(dv !== "browser");
     setView(v === "grid" ? "grid" : "scroll"); setCard((["s", "m", "l"].includes(q.get("card") ?? "") ? q.get("card") : "m") as Card); setScrolling(q.get("scrolling") !== "no"); setRot(q.get("rotate") === "yes");
     const o = (q.get("only") || "").split(",").filter(Boolean); setOnly(o.length ? o : null);
     setRecent(readRecent());
@@ -109,7 +123,8 @@ function TesterInner() {
   const blocked = frameCheck && frameCheck.url === url && frameCheck.embeddable === false ? frameCheck : null;
 
   /* Load together: every frame loads at once, and all are shown together when the last one is ready (or after 12 s). */
-  const gen = `${url}|${scrolling}|${reloadKey}`;
+  // A new device group, or switching device view, loads every frame again (all shown together)
+  const gen = `${url}|${scrolling}|${reloadKey}|${group}|${deviceView}`;
   const [ready, setReady] = useState<{ gen: string; ids: string[] }>({ gen: "", ids: [] });
   const [revealedGen, setRevealedGen] = useState("");
   const markReady = useCallback((g: string, id: string) => setReady((r) => (r.gen === g ? { gen: g, ids: [...r.ids, id] } : { gen: g, ids: [id] })), []);
@@ -123,6 +138,12 @@ function TesterInner() {
   const linked = useRef({ gen: "", set: new WeakSet<Window>() });
   const genRef = useRef(gen);
   useEffect(() => { genRef.current = gen; }, [gen]);
+  /** Where the pages were last scrolled to (0–1), so frames that load later start at the same place */
+  const lastScroll = useRef({ url: "", ratio: 0 });
+  const urlRef = useRef(url);
+  useEffect(() => { urlRef.current = url; }, [url]);
+  /** Frames report scrolls only once the set is shown; before that, a page settling itself isn't the visitor scrolling */
+  const shownRef = useRef(false);
   const [linkedState, setLinkedState] = useState({ gen: "", n: 0 });
   const linkedCount = linkedState.gen === gen ? linkedState.n : 0;
   useEffect(() => {
@@ -141,13 +162,21 @@ function TesterInner() {
       const set = linked.current.set;
       set.add(e.source as Window);
       setLinkedState({ gen: g, n: frames.filter((f) => f.contentWindow && set.has(f.contentWindow)).length });
-      if (d.fitcheck === "scroll" && syncRef.current && typeof d.ratio === "number") {
-        for (const f of frames) if (f !== from) f.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: d.ratio }, "*");
+      const last = lastScroll.current.url === urlRef.current ? lastScroll.current.ratio : 0;
+      if (d.fitcheck === "hello" && syncRef.current && last > 0) from.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: last }, "*");
+      // A click in one device (closing a popup, opening a menu, a link) is repeated in the others
+      if (d.fitcheck === "click" && shownRef.current && syncRef.current) {
+        for (const f of frames) if (f !== from) f.contentWindow?.postMessage({ ...d, fitcheck: "clickAt" }, "*");
+      }
+      if (d.fitcheck === "scroll" && shownRef.current && typeof d.ratio === "number") {
+        lastScroll.current = { url: urlRef.current, ratio: d.ratio };
+        if (syncRef.current) for (const f of frames) if (f !== from) f.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: d.ratio }, "*");
       }
     };
     window.addEventListener("message", onMsg);
     return () => window.removeEventListener("message", onMsg);
   }, []);
+  const changeDeviceView = (on: boolean) => { setDeviceView(on); try { localStorage.setItem(DEVICE_VIEW_KEY, on ? "device" : "browser"); } catch { /* storage blocked */ } };
   const changeSync = (on: boolean) => { setSyncScroll(on); try { localStorage.setItem(SYNC_KEY, on ? "yes" : "no"); } catch { /* storage blocked */ } };
   const syncTag = typeof window !== "undefined" ? `<script src="${window.location.origin}/sync.js" defer></script>` : `<script src="https://fitcheck.smartsitecp.com/sync.js" defer></script>`;
 
@@ -166,8 +195,9 @@ function TesterInner() {
     if (view === "grid" && card !== "m") q.set("card", card);
     q.set("scrolling", scrolling ? "yes" : "no");
     if (rot) q.set("rotate", "yes");
+    if (!deviceView) q.set("as", "browser");
     window.history.replaceState(null, "", window.location.pathname + "?" + q.toString());
-  }, [families, site, url, group, only, size, view, card, scrolling, rot]);
+  }, [families, site, url, group, only, size, view, card, scrolling, rot, deviceView]);
 
   /* Measure the device area */
   useEffect(() => {
@@ -178,22 +208,56 @@ function TesterInner() {
     return () => ro.disconnect();
   }, [families]);
 
+  /* The device strip moves only when the visitor moves it. Pages inside the frames often take focus while loading
+     (autofocus, sliders, popups), and the browser then scrolls the strip to show that frame: put it back. */
+  const userMoved = useRef(0);
+  const stripPos = useRef({ left: 0, top: 0 });
+  useEffect(() => {
+    const el = stripRef.current;
+    if (!el) return;
+    const mark = () => { userMoved.current = Date.now(); };
+    const onScroll = () => {
+      if (Date.now() - userMoved.current < 2000) stripPos.current = { left: el.scrollLeft, top: el.scrollTop };
+      else if (el.scrollLeft !== stripPos.current.left || el.scrollTop !== stripPos.current.top) el.scrollTo(stripPos.current.left, stripPos.current.top);
+    };
+    const opts = { capture: true, passive: true } as const;
+    for (const t of ["wheel", "pointerdown", "touchstart", "touchmove", "keydown"]) el.addEventListener(t, mark, opts);
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      for (const t of ["wheel", "pointerdown", "touchstart", "touchmove", "keydown"]) el.removeEventListener(t, mark, opts);
+      el.removeEventListener("scroll", onScroll);
+    };
+  }, []);
+
   const active = useMemo(() => {
     if (!families?.length) return null;
     return families.find((f) => f.id === group) ?? families.find((f) => f.is_default) ?? families[0];
   }, [families, group]);
   const allDevices = useMemo(() => active?.devices ?? [], [active]);
   const devices = useMemo(() => (only ? allDevices.filter((d) => only.includes(d.id)) : allDevices), [allDevices, only]);
+  /** Laptops, desktops and TVs are wide already: for them the switch turns them upright (Portrait) */
+  const wideGroup = devices.length > 0 && devices.filter((d) => d.w > d.h).length > devices.length / 2;
+  const turnLabel = wideGroup ? "Portrait" : "Landscape";
   const pickDevices = (ids: string[]) => setOnly(ids.length === allDevices.length ? null : allDevices.map((d) => d.id).filter((id) => ids.includes(id)));
   const selectGroup = (id: string) => {
     if (id === active?.id) return; // the open tab toggles its device checklist (handled by the Popover)
     setGroup(id); setOnly(null); setPickerOpen(false); setFocus(-1);
+    stripPos.current = { left: 0, top: 0 };
     stripRef.current?.scrollTo({ left: 0, top: 0 });
   };
 
   const readyCount = url && ready.gen === gen ? devices.filter((d) => ready.ids.includes(d.id)).length : 0;
   if (url && devices.length > 0 && readyCount === devices.length && revealedGen !== gen) setRevealedGen(gen);
   const revealed = revealedGen === gen;
+  const srcFor = (d: Device) => (deviceView && url ? `${API_BASE}/api/public/view?url=${encodeURIComponent(url)}&ua=${agentOf(d)}&r=${reloadKey}` : url);
+  /* When a new set of frames is shown (new group, reload, …), put them all where the pages were scrolled to */
+  useEffect(() => {
+    shownRef.current = revealed;
+    if (!revealed || !syncScroll) return;
+    const last = lastScroll.current.url === url ? lastScroll.current.ratio : 0;
+    if (last <= 0) return;
+    for (const f of stripRef.current?.querySelectorAll("iframe") ?? []) f.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: last }, "*");
+  }, [revealed, gen, url, syncScroll]);
 
   /* Scale for each device. Scroll view: fit the row height. Grid view: a comfortable card height. */
   const scales = useMemo(() => {
@@ -217,7 +281,7 @@ function TesterInner() {
   }, [message]);
 
   const changeView = (v: View) => { setView(v); try { localStorage.setItem(VIEW_KEY, v); } catch { /* storage blocked */ } };
-  const scrollBy = (dir: number) => stripRef.current?.scrollBy({ left: dir * (stripRef.current.clientWidth * 0.8), behavior: "smooth" });
+  const scrollBy = (dir: number) => { userMoved.current = Date.now(); stripRef.current?.scrollBy({ left: dir * (stripRef.current.clientWidth * 0.8), behavior: "smooth" }); };
 
   /* Drag to scroll with the mouse (touch already scrolls natively). Frames stop taking the pointer while dragging. */
   const drag = useRef<{ x: number; y: number; left: number; top: number; id: number; moved: boolean } | null>(null);
@@ -270,7 +334,7 @@ function TesterInner() {
   const fdim = fd ? dims(fd, rot) : null;
 
   return (
-    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] ${site.banner || blocked ? "grid-rows-[auto_auto_auto_minmax(0,1fr)_auto]" : "grid-rows-[auto_auto_minmax(0,1fr)_auto]"} bg-cream font-sans text-ink`}>
+    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] ${site.banner || (blocked && !deviceView) ? "grid-rows-[auto_auto_auto_minmax(0,1fr)_auto]" : "grid-rows-[auto_auto_minmax(0,1fr)_auto]"} bg-cream font-sans text-ink`}>
       {/* Header */}
       <header className="site-header flex flex-wrap items-center gap-4 px-6 pb-2.5 pt-4 max-md:px-4">
         <Link href="/" className="site-logo text-[22px] font-bold tracking-tight text-ink no-underline">
@@ -295,14 +359,14 @@ function TesterInner() {
         </form>
       </header>
 
-      {(site.banner || blocked) && (
+      {(site.banner || (blocked && !deviceView)) && (
         <div className="site-notices mx-6 mb-1 grid gap-1.5 max-md:mx-4">
           {site.banner && (
             <div role="status" className="site-banner rounded-xl border border-solid border-[#f5c3ae] bg-coral-soft px-4 py-2 text-[14px] text-ink">
               <span className="site-banner-text">{site.banner}</span>
             </div>
           )}
-          {blocked && (
+          {blocked && !deviceView && (
             <div role="alert" className="frame-blocked-notice rounded-xl border border-solid border-[#f3c969] bg-[#fff8e1] px-4 py-2 text-[14px] text-ink">
               <b className="frame-blocked-title">{hostOf(blocked.url)} doesn&apos;t allow being shown inside other websites</b>, so the screens stay blank.
               {blocked.reason && <> It sends <code className="frame-blocked-reason rounded bg-white/70 px-1 text-[13px]">{blocked.reason}</code>.</>}
@@ -386,7 +450,7 @@ function TesterInner() {
         {devices.map((d, i) => {
           const r = dims(d, rot);
           return (
-            <section key={`${d.id}-${reloadKey}`} aria-label={d.name} data-device={d.id} data-type={d.type}
+            <section key={`${d.id}-${reloadKey}-${group}`} aria-label={d.name} data-device={d.id} data-type={d.type}
               className={`device-item device-item--${d.type.toLowerCase()} flex flex-none snap-start flex-col items-center gap-2.5`}>
               <div className="device-label flex flex-col items-center text-center">
                 <span className="device-number font-mono text-[11px] text-coral">{String(i + 1).padStart(2, "0")}</span>
@@ -394,7 +458,7 @@ function TesterInner() {
                   className="device-name cursor-pointer rounded-md border-0 bg-transparent px-1.5 py-0.5 font-bold text-ink hover:bg-coral-soft hover:text-coral">{d.name}</button>
                 <small className="device-size font-mono text-[11.5px] text-muted">{r.w} × {r.h}</small>
               </div>
-              <DeviceFrame url={url} w={r.w} h={r.h} s={scales[i] ?? 0.3} shape={d.shape} rot={rot} scrolling={scrolling} label={d.name}
+              <DeviceFrame url={url} src={srcFor(d)} w={r.w} h={r.h} s={scales[i] ?? 0.3} shape={d.shape} rot={rot} scrolling={scrolling} label={d.name}
                 onReady={() => markReady(gen, d.id)} reveal={revealed ? undefined : false} />
             </section>
           );
@@ -410,7 +474,7 @@ function TesterInner() {
             <Button className="footer-nav-next" icon={<RightOutlined />} onClick={() => scrollBy(1)} aria-label="Scroll right" />
           </div>
         )}
-        <span className="footer-status text-sm text-muted"><b className="text-ink">{devices.length} devices</b> · {size === "true" ? "same scale" : "same height"} · {view === "grid" ? "grid" : "scroll"}{rot ? " · landscape" : ""}
+        <span className="footer-status text-sm text-muted"><b className="text-ink">{devices.length} devices</b> · {size === "true" ? "same scale" : "same height"} · {view === "grid" ? "grid" : "scroll"}{rot ? ` · ${turnLabel.toLowerCase()}` : ""}
           {url && devices.length > 0 && !revealed && <span className="footer-loading text-coral"> · loading {readyCount}/{devices.length}</span>}</span>
         <span className="flex-1" />
         <div className="footer-actions flex flex-wrap items-center gap-2">
@@ -419,15 +483,20 @@ function TesterInner() {
               <Switch size="small" checked={scrolling} onChange={setScrolling} />Scroll inside pages
             </label>
           </Tooltip>
-          <Tooltip title={!syncScroll ? "Each device scrolls on its own." : linkedCount ? `Scrolling one device scrolls the others (${linkedCount} of ${devices.length} connected).` : "Scroll one device and the others follow. Needs a one-line script on the tested site: click Blank screen? for how."}>
+          <Tooltip title={deviceView ? "Each device opens the site as that device would (phone, tablet, computer, TV), so sites that choose their mobile or desktop layout on the server show the right one. Turn off to load the site straight into every frame." : "Every frame loads the site straight from your browser, as your computer. Sites that choose their layout on the server show the desktop version everywhere."}>
+            <label className={`footer-option footer-option--device-view${deviceView ? " footer-option--on" : ""}`}>
+              <Switch size="small" checked={deviceView} onChange={changeDeviceView} />Device view
+            </label>
+          </Tooltip>
+          <Tooltip title={!syncScroll ? "Each device scrolls and clicks on its own." : linkedCount ? `Scrolling or clicking in one device does the same in the others, e.g. closing a popup everywhere (${linkedCount} of ${devices.length} connected).` : deviceView ? "Scroll or click in one device and the others follow." : "Scroll one device and the others follow. Without Device view, the site needs a one-line script: click Blank screen? for how."}>
             <label className={`footer-option footer-option--sync-scroll${syncScroll ? " footer-option--on" : ""}`}>
-              <Switch size="small" checked={syncScroll} onChange={changeSync} />Sync scroll
+              <Switch size="small" checked={syncScroll} onChange={changeSync} />Sync scroll &amp; clicks
               {syncScroll && url && revealed && <span className={`footer-sync-state text-[12px] ${linkedCount ? "text-[#2e8b57]" : "text-muted"}`}>{linkedCount ? `${linkedCount}/${devices.length}` : "not connected"}</span>}
             </label>
           </Tooltip>
-          <Tooltip title="Turn every device sideways">
-            <label className={`footer-option footer-option--landscape${rot ? " footer-option--on" : ""}`}>
-              <Switch size="small" checked={rot} onChange={setRot} />Landscape
+          <Tooltip title={wideGroup ? "Turn every device upright" : "Turn every device sideways"}>
+            <label className={`footer-option footer-option--landscape footer-option--${turnLabel.toLowerCase()}${rot ? " footer-option--on" : ""}`}>
+              <Switch size="small" checked={rot} onChange={setRot} />{turnLabel}
             </label>
           </Tooltip>
           <span className="footer-divider max-md:hidden" aria-hidden />
@@ -440,7 +509,7 @@ function TesterInner() {
 
       {/* Focus view */}
       {fd && fdim && (
-        <FocusView device={fd} w={fdim.w} h={fdim.h} url={url} rot={rot} scrolling={scrolling}
+        <FocusView device={fd} w={fdim.w} h={fdim.h} url={url} src={srcFor(fd)} rot={rot} scrolling={scrolling}
           onClose={() => setFocus(-1)} onPrev={() => setFocus((i) => (i - 1 + devices.length) % devices.length)} onNext={() => setFocus((i) => (i + 1) % devices.length)} />
       )}
 
@@ -450,7 +519,7 @@ function TesterInner() {
           <li><b>The site blocks framing.</b> It sends <code>X-Frame-Options</code> or a <code>Content-Security-Policy</code> with <code>frame-ancestors</code>. To allow this tester on <b>your own</b> site, remove <code>X-Frame-Options</code> and send:<br /><code className="help-frame-header mt-1 inline-block break-all rounded bg-[#f6efe9] px-1.5 py-0.5">Content-Security-Policy: frame-ancestors &apos;self&apos; {typeof window !== "undefined" ? window.location.origin : "https://fitcheck.smartsitecp.com"}</code><br />Sites behind Cloudflare&apos;s bot check may still refuse.</li>
           <li><b>The link is http:// on an https:// page.</b> Browsers block mixed content. Use the https:// address.</li>
           <li><b>The site needs a login or cookie consent.</b> Third-party cookies are often blocked inside frames.</li>
-          <li className="help-sync-scroll"><b>Sync scroll needs one line on the site.</b> Browsers don&apos;t let a page read or move the scroll of another site shown in a frame. On <b>your own</b> site, add this before <code>&lt;/body&gt;</code>, and scrolling one device scrolls all the others:<br />
+          <li className="help-sync-scroll"><b>Sync scroll without Device view needs one line on the site.</b> With Device view on, it works on any site. Browsers don&apos;t let a page read or move the scroll of another site shown in a frame. On <b>your own</b> site, add this before <code>&lt;/body&gt;</code>, and scrolling one device scrolls all the others:<br />
             <code className="help-sync-tag mt-1 inline-block break-all rounded bg-[#f6efe9] px-1.5 py-0.5">{syncTag}</code><br />It only runs inside Fitcheck&apos;s frames and only shares the scroll position.</li>
           <li><b>Local addresses.</b> <code>localhost</code> links only work on the computer running that site.</li>
         </ul>
@@ -487,8 +556,8 @@ function DevicePicker({ devices, selected, onChange, rot }: { devices: Device[];
   );
 }
 
-function FocusView({ device, w, h, url, rot, scrolling, onClose, onPrev, onNext }: {
-  device: Device; w: number; h: number; url: string; rot: boolean; scrolling: boolean; onClose: () => void; onPrev: () => void; onNext: () => void;
+function FocusView({ device, w, h, url, src, rot, scrolling, onClose, onPrev, onNext }: {
+  device: Device; w: number; h: number; url: string; src: string; rot: boolean; scrolling: boolean; onClose: () => void; onPrev: () => void; onNext: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [s, setS] = useState(0.3);
@@ -515,7 +584,7 @@ function FocusView({ device, w, h, url, rot, scrolling, onClose, onPrev, onNext 
         <Button ghost onClick={onClose} autoFocus>Close · Esc</Button>
       </div>
       <div ref={ref} className="flex min-h-0 overflow-auto" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-        <div className="m-auto"><DeviceFrame url={url} w={w} h={h} s={s} shape={device.shape} rot={rot} scrolling={scrolling} label={device.name} /></div>
+        <div className="m-auto"><DeviceFrame url={url} src={src} w={w} h={h} s={s} shape={device.shape} rot={rot} scrolling={scrolling} label={device.name} /></div>
       </div>
     </div>
   );

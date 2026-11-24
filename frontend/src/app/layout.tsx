@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { DM_Sans, DM_Mono, Inter } from "next/font/google";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import "./globals.css";
@@ -21,6 +22,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <AntdRegistry layer>{children}</AntdRegistry>
         </Suspense>
+        {/* Scroll sync when Fitcheck itself is tested inside Fitcheck; does nothing outside a frame */}
+        <Script src="/sync.js" strategy="afterInteractive" />
       </body>
     </html>
   );

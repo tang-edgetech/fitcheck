@@ -12,7 +12,10 @@ class SecurityHeaders
     {
         $response = $next($request);
         $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->headers->set('X-Frame-Options', 'DENY');
+        // Responses that say who may frame them (the tester's device view) keep that; everything else: nobody
+        if (! str_contains((string) $response->headers->get('Content-Security-Policy'), 'frame-ancestors')) {
+            $response->headers->set('X-Frame-Options', 'DENY');
+        }
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
         if ($request->user() && ! $response->headers->has('Content-Disposition')) {
