@@ -71,7 +71,7 @@ export default function SettingsShell({ children }: { children: React.ReactNode 
         }))} />
       {!s ? <Skeleton className="page-loading" active /> : (
         <SettingsContext.Provider value={{ s, save }}>
-          <div className={`settings-panel settings-panel--${active} grid max-w-[760px] gap-4`}>{children}</div>
+          <div className={`settings-panel settings-panel--${active} grid gap-4${active === "log" ? "" : " max-w-[760px]"}`}>{children}</div>
         </SettingsContext.Provider>
       )}
     </div>
