@@ -26,7 +26,13 @@ if (!/^https?:\/\//.test(api)) {
 console.log(`Building static site with NEXT_PUBLIC_API_URL=${api} …`);
 // out/ is NOT cleared here: on the server it's the live site, so it keeps serving while Next.js compiles.
 // Next.js replaces it itself in the final export step (seconds); if the build fails, the live site stays as it was.
-const build = spawnSync("npx next build", { cwd: ROOT, stdio: "inherit", shell: true, env: { ...process.env, NEXT_OUTPUT: "export", NEXT_PUBLIC_API_URL: api } });
+// Turbopack needs Next.js's native compiler, which needs glibc 2.29+. Older Linux servers (e.g. CentOS 7/8 based
+// cPanel) only get the WebAssembly compiler, which works with Webpack. NEXT_BUILD_ARGS overrides the choice.
+const glibc = process.platform === "linux" ? process.report?.getReport?.().header?.glibcVersionRuntime : undefined;
+const oldGlibc = glibc && glibc.split(".").map(Number).reduce((a, n, i) => a + n / 1000 ** i, 0) < 2.029;
+const buildArgs = process.env.NEXT_BUILD_ARGS ?? (oldGlibc ? "--webpack" : "");
+if (oldGlibc && !process.env.NEXT_BUILD_ARGS) console.log(`glibc ${glibc} is too old for Turbopack: building with Webpack (slower).`);
+const build = spawnSync(`npx next build ${buildArgs}`.trim(), { cwd: ROOT, stdio: "inherit", shell: true, env: { ...process.env, NEXT_OUTPUT: "export", NEXT_PUBLIC_API_URL: api } });
 if (build.status !== 0) process.exit(build.status ?? 1);
 if (!existsSync(join(OUT, "index.html"))) { console.error("Build finished but out/index.html is missing."); process.exit(1); }
 writeFileSync(join(OUT, "BUILD-INFO.txt"), `Built ${new Date().toISOString()}\nNEXT_PUBLIC_API_URL=${api}\n`);
