@@ -112,6 +112,12 @@ if [[ "${DEPLOY_SITE:-1}" == 0 && $DO_SITE -eq 1 ]]; then
   DO_SITE=0; NOTE="Site changed, but DEPLOY_SITE=0: build it locally and upload it."
   log "Site changed, but DEPLOY_SITE=0: build it locally with npm run build:cpanel and upload."
 fi
+# Node.js installed in the home folder (no root needed): ~/node/bin, see docs/DEPLOY-CPANEL.md
+[[ -x "$HOME/node/bin/npm" ]] && export PATH="$HOME/node/bin:$PATH"
+if [[ $DO_SITE -eq 1 ]] && ! command -v npm >/dev/null 2>&1 && [[ ! -f "${NODE_ACTIVATE:-/nonexistent}" ]]; then
+  DO_SITE=0; NOTE="Site changed, but Node.js (npm) isn't installed on the server: install it in ~/node, or set DEPLOY_SITE=0 and upload the site."
+  log "$NOTE"
+fi
 
 log "Commits:"; log "$COMMITS"
 log "Deploy API: $DO_API   Deploy site: $DO_SITE   (API in place: $API_IN_PLACE, site in place: $WEB_IN_PLACE)"
