@@ -130,6 +130,16 @@ export const HELP: HelpTopic[] = [
         ],
       },
       {
+        heading: "Add devices from the library",
+        steps: [
+          "Select Add from library. It lists about 140 phones, tablets, laptops, desktops and TVs by brand.",
+          "Search (for example iPhone 15, Galaxy or 412), or filter by type and brand.",
+          "Tick devices one by one, or tick a brand to take all of its devices. Devices you already have show as Added.",
+          "Optionally pick menu groups to add them to, then select Add.",
+        ],
+        tips: ["Android sizes depend on the phone's display-size setting. Edit any device after adding it if you need a different size."],
+      },
+      {
         heading: "Add or edit a device",
         image: "screen-view-edit.svg",
         caption: "Editing a screen view, with a live preview of the frame",

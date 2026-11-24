@@ -3,13 +3,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { App, AutoComplete, Button, Drawer, Form, Input, InputNumber, Popconfirm, Select, Space, Switch, Table, Tag, Tooltip } from "antd";
 import type { TableProps } from "antd";
-import { CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SwapOutlined } from "@ant-design/icons";
+import { AppstoreAddOutlined, CopyOutlined, DeleteOutlined, EditOutlined, PlusOutlined, SwapOutlined } from "@ant-design/icons";
 import { api, ApiError } from "@/lib/api";
 import { fmtAgo } from "@/lib/format";
 import type { DeviceType, Family, Frame, ScreenView } from "@/lib/types";
 import { useAdmin } from "@/components/admin/AdminProvider";
 import { NoAccess, PageHead } from "@/components/admin/AdminShell";
 import DeviceFrame, { fitScale } from "@/components/tester/DeviceFrame";
+import DeviceLibrary from "@/components/admin/DeviceLibrary";
 
 const TYPE_COLOR: Record<DeviceType, string> = { Mobile: "blue", Tablet: "purple", Desktop: "cyan", TV: "gold" };
 const FRAME_LABEL: Record<Frame, string> = {
@@ -28,6 +29,7 @@ export default function ScreenViewsPage() {
   const [total, setTotal] = useState(0);
   const [brands, setBrands] = useState<string[]>([]);
   const [families, setFamilies] = useState<Family[]>([]);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState<Filters>({ q: "" });
   const [page, setPage] = useState({ current: 1, pageSize: 50 });
@@ -95,7 +97,12 @@ export default function ScreenViewsPage() {
   return (
     <div className="page page-screen-views">
       <PageHead title="Screen views" sub="Every device viewport the tester can show. Sizes are CSS pixels, the width the device's browser reports."
-        extra={<Button className="page-header-btn page-header-btn--add" type="primary" icon={<PlusOutlined />} onClick={() => setEditing({ type: "Mobile", frame: "hole", is_active: true, sort_order: 0 })}>Add screen view</Button>} />
+        extra={<>
+          <Button className="page-header-btn page-header-btn--library" icon={<AppstoreAddOutlined />} onClick={() => setLibraryOpen(true)}>Add from library</Button>
+          <Button className="page-header-btn page-header-btn--add" type="primary" icon={<PlusOutlined />} onClick={() => setEditing({ type: "Mobile", frame: "hole", is_active: true, sort_order: 0 })}>Add screen view</Button>
+        </>} />
+      <DeviceLibrary open={libraryOpen} families={families} onClose={() => setLibraryOpen(false)}
+        onAdded={() => { setLibraryOpen(false); load(); if (can("families.manage")) api<{ data: Family[] }>("/families").then((r) => setFamilies(r.data)).catch(() => {}); }} />
 
       <div className="filter-bar mb-3 flex flex-wrap gap-2">
         <Input.Search allowClear placeholder="Search name, brand or width" className="filter-bar-search w-64" onSearch={(q) => { setFilters((f) => ({ ...f, q })); setPage((p) => ({ ...p, current: 1 })); }} />

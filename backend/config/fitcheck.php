@@ -8,6 +8,9 @@ return [
     'default_password' => env('DEFAULT_ADMIN_PASSWORD', 'Admin@1234'),
 
     /* IPs of the Next.js server that proxies the API (comma separated). Local: 127.0.0.1. cPanel: the server's IP. */
+    /* The tester's own address (used to tell whether a site allows being shown in its frames) */
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:3000'),
+
     'trusted_proxies' => env('TRUSTED_PROXIES', '127.0.0.1,::1'),
 
     'seed_accounts' => [

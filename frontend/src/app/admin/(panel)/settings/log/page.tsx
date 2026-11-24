@@ -8,6 +8,7 @@ import { api, ApiError } from "@/lib/api";
 import { useAdmin } from "@/components/admin/AdminProvider";
 import { NoAccess } from "@/components/admin/AdminShell";
 import { useSettings, useSettingsErrors } from "@/components/admin/SettingsShell";
+import DeployLog from "@/components/admin/DeployLog";
 
 const LEVELS = [
   { value: "debug", label: "Debug: everything, for troubleshooting" },
@@ -68,6 +69,7 @@ export default function LogSettingsPage() {
         description="Its rows are append-only and linked together, so removing any would break the integrity check. Export it if you need an archive." />
       <Alert className="settings-alert settings-alert--scheduler" type="warning" showIcon title="Automatic daily clean-up needs the Laravel scheduler"
         description={<>On the server, add a cron entry that runs <code>php artisan schedule:run</code> every minute. Without it, use the button above.</>} />
+      <DeployLog />
     </>
   );
 }

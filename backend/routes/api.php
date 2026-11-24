@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 // Public: data for the tester page
 Route::get('public/screen-views', [PublicController::class, 'screenViews'])->middleware('throttle:120,1')->name('public.screen-views');
+Route::get('public/frame-check', [PublicController::class, 'frameCheck'])->middleware('throttle:30,1')->name('public.frame-check');
 
 // Sign-in (these write their own audit rows)
 Route::prefix('auth')->middleware('audit.skip')->group(function () {
@@ -39,6 +40,8 @@ Route::middleware(['auth:sanctum', 'session.policy', 'audit', 'throttle:240,1'])
 
         Route::middleware('can:screenviews.manage')->group(function () {
             Route::post('screen-views/bulk', [ScreenViewController::class, 'bulk'])->name('screenviews.bulk');
+            Route::get('screen-views/library', [ScreenViewController::class, 'library'])->name('screenviews.library');
+            Route::post('screen-views/import', [ScreenViewController::class, 'import'])->name('screenviews.import');
             Route::apiResource('screen-views', ScreenViewController::class)->parameters(['screen-views' => 'screenView'])->names('screenviews');
         });
 
@@ -62,6 +65,7 @@ Route::middleware(['auth:sanctum', 'session.policy', 'audit', 'throttle:240,1'])
 
         Route::get('settings', [SettingController::class, 'show'])->middleware('can:settings.manage')->name('settings.show');
         Route::put('settings', [SettingController::class, 'update'])->middleware('can:settings.manage')->name('settings.update');
+        Route::get('settings/deploy-log', [\App\Http\Controllers\Api\DeployLogController::class, 'index'])->middleware('can:systemlogs.view')->name('settings.deploy-log');
         Route::post('settings/system-log/prune', [SettingController::class, 'pruneSystemLog'])->middleware('can:systemlogs.view')->name('settings.prune-system-log');
     });
 });

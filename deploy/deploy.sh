@@ -13,6 +13,7 @@
 #   --dry-run        show what would be deployed, change nothing
 #   --api-only / --site-only   limit a forced deploy to one part
 # Settings: deploy/deploy.env (see deploy.env.example). Log: $STATE_DIR/deploy.log
+# Each run is also recorded for the admin panel (Settings > Log): backend/storage/app/deploy/ (see record.php)
 
 # No -E: the ERR trap fires once in this shell when a ( … ) step fails, not again inside it
 set -euo pipefail
@@ -47,11 +48,25 @@ DEPLOY_THREAD="${TELEGRAM_DEPLOY_THREAD_ID:-$TELEGRAM_THREAD_ID}"
 CURRENT_STEP="starting"
 MAINTENANCE=0
 STARTED=$(date +%s)
+TRIGGER=cron; [[ -t 0 ]] && TRIGGER=manual; [[ $FORCE -eq 1 ]] && TRIGGER="$TRIGGER (forced)"
+
+# For the admin panel: record check|run KEY=value…  (never stops the deploy)
+RECORD_DIR="$API_DIR/storage/app/deploy"
+GIT_FMT='%h%x1f%cI%x1f%an%x1f%s'
+record() {
+  [[ $DRY -eq 1 ]] && return 0
+  local mode="$1"; shift
+  env FC_BRANCH="$GIT_BRANCH" FC_HEAD_COMMIT="$(git -C "$SRC_DIR" log -1 --format="$GIT_FMT" 2>/dev/null)" "$@"     $PHP_BIN "$DEPLOY_SCRIPTS_DIR/record.php" "$mode" "$RECORD_DIR" >/dev/null 2>&1 || true
+}
 
 cd "$SRC_DIR"
 # Never wait for a password from cron: fail instead (set up the deploy key, see the guide)
 export GIT_TERMINAL_PROMPT=0
-git fetch --quiet origin "$GIT_BRANCH"
+if ! FETCH_ERR=$(git fetch --quiet origin "$GIT_BRANCH" 2>&1); then
+  record check FC_RESULT=fetch-failed FC_MESSAGE="git fetch failed: ${FETCH_ERR:0:500}"
+  echo "git fetch failed: $FETCH_ERR" >&2
+  exit 1
+fi
 
 # Your layout: the apps run inside the git copy itself (like C:\xampp\htdocs\fitcheck on a PC):
 #   API_DIR = SRC_DIR/backend   and   WEB_DIR = SRC_DIR/frontend/dist-cpanel   → nothing to copy
@@ -62,6 +77,12 @@ WEB_IN_PLACE=0; same_path "$WEB_DIR" "$SRC_DIR/frontend/dist-cpanel" && WEB_IN_P
 LOCAL=$(git rev-parse HEAD)
 REMOTE=$(git rev-parse "origin/$GIT_BRANCH")
 
+REMOTE_INFO=$(git log -1 --format="$GIT_FMT" "$REMOTE")
+if [[ "$LOCAL" == "$REMOTE" ]]; then
+  record check FC_RESULT=up-to-date FC_REMOTE_COMMIT="$REMOTE_INFO"
+else
+  record check FC_RESULT=new-commits FC_REMOTE_COMMIT="$REMOTE_INFO" FC_MESSAGE="$(git rev-list --count "$LOCAL..$REMOTE") new commit(s), deploying"
+fi
 if [[ "$LOCAL" == "$REMOTE" && $FORCE -eq 0 ]]; then
   exit 0 # nothing new
 fi
@@ -73,9 +94,12 @@ log "===== Deploy $(git rev-parse --short "$REMOTE") ($GIT_BRANCH) ====="
 if [[ "$LOCAL" != "$REMOTE" ]]; then
   CHANGED=$(git diff --name-only "$LOCAL" "$REMOTE")
   COMMITS=$(git log --format='• %h %s (%an)' "$LOCAL..$REMOTE" | head -10)
+  COMMITS_REC=$(git log --format="$GIT_FMT" "$LOCAL..$REMOTE" | head -20)
 else
   CHANGED=""; COMMITS="(forced redeploy of $(git log -1 --format='%h %s'))"
+  COMMITS_REC=$(git log -1 --format="$GIT_FMT")
 fi
+NOTE=""
 DO_API=0; DO_SITE=0
 grep -q '^backend/' <<<"$CHANGED" && DO_API=1
 grep -qE '^(frontend/|docs/handbook/)' <<<"$CHANGED" && DO_SITE=1
@@ -85,7 +109,8 @@ if [[ $FORCE -eq 1 ]]; then
 fi
 # DEPLOY_SITE=0 in deploy.env: the server doesn't build the site (e.g. not enough memory); upload it by hand instead
 if [[ "${DEPLOY_SITE:-1}" == 0 && $DO_SITE -eq 1 ]]; then
-  DO_SITE=0; log "Site changed, but DEPLOY_SITE=0: build it locally with npm run build:cpanel and upload."
+  DO_SITE=0; NOTE="Site changed, but DEPLOY_SITE=0: build it locally and upload it."
+  log "Site changed, but DEPLOY_SITE=0: build it locally with npm run build:cpanel and upload."
 fi
 
 log "Commits:"; log "$COMMITS"
@@ -98,6 +123,9 @@ fi
 SHORT=$(git rev-parse --short "$REMOTE")
 parts=(); [[ $DO_API -eq 1 ]] && parts+=("API"); [[ $DO_SITE -eq 1 ]] && parts+=("site")
 PARTS="${parts[*]:-nothing (docs only)}"
+# What every run record shares
+RUN_FIELDS=(FC_STARTED="$STARTED" FC_TRIGGER="$TRIGGER" FC_FROM="$(git rev-parse --short "$LOCAL")" FC_TO="$SHORT"
+  FC_PARTS="${parts[*]:-}" FC_COMMITS="$COMMITS_REC" FC_NOTE="$NOTE")
 
 on_error() {
   local code=$?
@@ -108,6 +136,7 @@ Commit <code>${SHORT}</code> on ${HOST_LABEL} (exit ${code})
 <pre>$(tg_escape "$tail_log")</pre>
 The previous version keeps running where possible. Fix and push, or run deploy.sh --force." "$DEPLOY_THREAD"
   log "FAILED at: $CURRENT_STEP"
+  record run "${RUN_FIELDS[@]}" FC_RESULT=failed FC_STEP="$CURRENT_STEP" FC_EXIT="$code" FC_LOG_TAIL="$(tail -n 40 "$LOG_FILE" 2>/dev/null)"
   exit "$code"
 }
 trap on_error ERR
@@ -212,5 +241,6 @@ done
 trap - ERR
 SECS=$(( $(date +%s) - STARTED ))
 log "Done in ${SECS}s"
+record run "${RUN_FIELDS[@]}" FC_RESULT=success
 tg_send "✅ <b>Fitcheck deployed</b> <code>${SHORT}</code> → ${PARTS} in $((SECS / 60))m $((SECS % 60))s
 <a href=\"${SITE_URL}\">${SITE_URL#https://}</a> is answering." "$DEPLOY_THREAD"

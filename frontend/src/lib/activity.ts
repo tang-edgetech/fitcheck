@@ -95,6 +95,7 @@ const PHRASES: Record<string, Phrase> = {
   "screenviews.bulk_activate": { label: "Showed screen views on the tester", done: (t) => `showed ${t} on the tester`, tried: (t) => `show ${t} on the tester` },
   "screenviews.bulk_deactivate": { label: "Hid screen views from the tester", done: (t) => `hid ${t} from the tester`, tried: (t) => `hide ${t} from the tester` },
   "screenviews.bulk_delete": { label: "Deleted screen views", done: (t) => `deleted ${t}`, tried: (t) => `delete ${t}` },
+  "screenviews.import": { label: "Added devices from the library", done: (t) => `added ${t || "devices"} from the library`, tried: () => "add devices from the library" },
   "screenviews.bulk": { label: "Changed several screen views", done: () => "changed several screen views", tried: () => "change several screen views" },
 
   "users.create": { label: "Added a user", done: (t) => `added user ${t}`, tried: (t) => `add user ${t}` },

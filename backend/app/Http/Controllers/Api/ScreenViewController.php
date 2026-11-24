@@ -119,6 +119,63 @@ class ScreenViewController extends Controller
         return response()->json(['ok' => true, 'count' => count($names)]);
     }
 
+    /** The built-in device library (database/data/device-library.php), each marked with whether it's already added. */
+    public function library(): JsonResponse
+    {
+        $existing = ScreenView::query()->pluck('slug')->flip();
+        $devices = collect(static::libraryData())->map(fn ($d) => [
+            'slug' => $d[0], 'name' => $d[1], 'brand' => $d[2], 'type' => $d[3],
+            'width' => $d[4], 'height' => $d[5], 'frame' => $d[6], 'year' => $d[7],
+            'added' => $existing->has($d[0]),
+        ])->values();
+
+        return response()->json(['data' => $devices, 'total' => $devices->count(), 'added' => $devices->where('added', true)->count()]);
+    }
+
+    /** Adds the chosen library devices as screen views (skipping ones that exist) and puts them in the chosen menu groups. */
+    public function import(Request $request): JsonResponse
+    {
+        $library = collect(static::libraryData())->keyBy(0);
+        $data = $request->validate([
+            'slugs' => ['required', 'array', 'min:1', 'max:300'],
+            'slugs.*' => ['string', Rule::in($library->keys()->all())],
+            'family_ids' => ['sometimes', 'array'],
+            'family_ids.*' => ['integer', 'exists:families,id'],
+            'is_active' => ['sometimes', 'boolean'],
+        ]);
+        $existing = ScreenView::query()->whereIn('slug', $data['slugs'])->pluck('slug')->all();
+        $new = array_values(array_diff(array_unique($data['slugs']), $existing));
+        $order = (int) ScreenView::query()->max('sort_order');
+
+        $created = DB::transaction(function () use ($new, $library, $data, $request, &$order) {
+            $created = [];
+            foreach ($new as $slug) {
+                [, $name, $brand, $type, $w, $h, $frame] = $library[$slug];
+                $sv = new ScreenView(['slug' => $slug, 'name' => $name, 'brand' => $brand, 'type' => $type, 'width' => $w, 'height' => $h,
+                    'frame' => $frame, 'is_active' => $data['is_active'] ?? true, 'sort_order' => $order += 10]);
+                $sv->forceFill(['created_by' => $request->user()->id, 'updated_by' => $request->user()->id])->save();
+                if (! empty($data['family_ids'])) {
+                    $sv->families()->sync($this->familySync($sv, $data['family_ids']));
+                }
+                $created[] = $sv;
+            }
+
+            return $created;
+        });
+        PublicController::bust();
+        $names = array_map(fn ($sv) => $sv->name, $created);
+        $request->attributes->set('audit', ['action' => 'screenviews.import',
+            'target' => ['type' => 'screen_view', 'label' => count($created).' screen views'],
+            'meta' => ['added' => $names, 'skipped_existing' => $existing, 'family_ids' => $data['family_ids'] ?? []]]);
+
+        return response()->json(['added' => count($created), 'skipped' => count($existing), 'names' => $names], 201);
+    }
+
+    private static function libraryData(): array
+    {
+        return require database_path('data/device-library.php');
+    }
+
     private function validated(Request $request, ?ScreenView $sv = null): array
     {
         $req = $sv ? 'sometimes' : 'required';

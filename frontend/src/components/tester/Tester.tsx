@@ -16,6 +16,7 @@ const CARD_H: Record<Card, number> = { s: 340, m: 480, l: 640 };
 
 const RECENT_KEY = "fitcheck-recent";
 const VIEW_KEY = "fitcheck-view";
+const SYNC_KEY = "fitcheck-sync-scroll";
 
 interface SiteInfo { name: string; default_view: View; default_size: SizeMode; banner: string | null; help_email: string | null }
 const DEFAULT_SITE: SiteInfo = { name: "Fitcheck", default_view: "scroll", default_size: "true", banner: null, help_email: null };
@@ -80,17 +81,75 @@ function TesterInner() {
     setRecent(readRecent());
     fetch(API_BASE + "/api/public/screen-views", { headers: { Accept: "application/json" }, cache: "no-cache" })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((d: { families: PublicFamily[]; site?: Partial<SiteInfo> }) => {
+      .then((d: { families: PublicFamily[]; all?: Device[]; site?: Partial<SiteInfo> }) => {
         if (!Array.isArray(d?.families)) throw new Error("bad shape");
         const st = { ...DEFAULT_SITE, ...(d.site ?? {}) };
         setSite(st);
         // The visitor's link or saved choice wins; otherwise use the defaults from Settings > General
         if (!v) setView(st.default_view === "grid" ? "grid" : "scroll");
         if (!askedSize) setSize(st.default_size === "fill" ? "fill" : "true");
-        setFamilies(d.families.filter((f) => Array.isArray(f.devices)));
+        // "All devices": every active screen view in one tab, after the admin's own menu groups
+        const all = Array.isArray(d.all) && d.all.length ? [{ id: "all", name: "All devices", is_default: false, devices: d.all }] : [];
+        setFamilies([...d.families.filter((f) => Array.isArray(f.devices)), ...all]);
       })
       .catch(() => setLoadError("Could not load the device list. Check that the Fitcheck API is running, then reload."));
   }, []);
+
+  /* Does the site allow being shown in frames? If not, say why instead of leaving blank screens. */
+  const [frameCheck, setFrameCheck] = useState<{ url: string; embeddable: boolean | null; reason: string | null } | null>(null);
+  useEffect(() => {
+    if (!url) return;
+    const ctl = new AbortController();
+    fetch(API_BASE + "/api/public/frame-check?url=" + encodeURIComponent(url), { headers: { Accept: "application/json" }, signal: ctl.signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (d && typeof d === "object") setFrameCheck({ url, embeddable: d.embeddable ?? null, reason: d.reason ?? null }); })
+      .catch(() => { /* the check is only a hint; frames load regardless */ });
+    return () => ctl.abort();
+  }, [url]);
+  const blocked = frameCheck && frameCheck.url === url && frameCheck.embeddable === false ? frameCheck : null;
+
+  /* Load together: every frame loads at once, and all are shown together when the last one is ready (or after 12 s). */
+  const gen = `${url}|${scrolling}|${reloadKey}`;
+  const [ready, setReady] = useState<{ gen: string; ids: string[] }>({ gen: "", ids: [] });
+  const [revealedGen, setRevealedGen] = useState("");
+  const markReady = useCallback((g: string, id: string) => setReady((r) => (r.gen === g ? { gen: g, ids: [...r.ids, id] } : { gen: g, ids: [id] })), []);
+
+  /* Scroll sync. Browsers never let a page read or move the scroll of another site inside a frame,
+     so the tested site must include /sync.js, which reports its scroll and follows the others (postMessage). */
+  const [syncScroll, setSyncScroll] = useState(true);
+  const syncRef = useRef(true);
+  useEffect(() => { syncRef.current = syncScroll; }, [syncScroll]);
+  /** Frames whose page has sync.js, counted per load (gen) */
+  const linked = useRef({ gen: "", set: new WeakSet<Window>() });
+  const genRef = useRef(gen);
+  useEffect(() => { genRef.current = gen; }, [gen]);
+  const [linkedState, setLinkedState] = useState({ gen: "", n: 0 });
+  const linkedCount = linkedState.gen === gen ? linkedState.n : 0;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- read the saved choice once after hydration
+    try { if (localStorage.getItem(SYNC_KEY) === "no") setSyncScroll(false); } catch { /* storage blocked */ }
+  }, []);
+  useEffect(() => {
+    const onMsg = (e: MessageEvent) => {
+      const d = e.data as { fitcheck?: unknown; ratio?: unknown } | null;
+      if (!d || typeof d !== "object" || typeof d.fitcheck !== "string") return;
+      const frames = [...(stripRef.current?.querySelectorAll("iframe") ?? [])];
+      const from = frames.find((f) => f.contentWindow === e.source);
+      if (!from) return; // only the frames in the device list
+      const g = genRef.current;
+      if (linked.current.gen !== g) linked.current = { gen: g, set: new WeakSet() };
+      const set = linked.current.set;
+      set.add(e.source as Window);
+      setLinkedState({ gen: g, n: frames.filter((f) => f.contentWindow && set.has(f.contentWindow)).length });
+      if (d.fitcheck === "scroll" && syncRef.current && typeof d.ratio === "number") {
+        for (const f of frames) if (f !== from) f.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: d.ratio }, "*");
+      }
+    };
+    window.addEventListener("message", onMsg);
+    return () => window.removeEventListener("message", onMsg);
+  }, []);
+  const changeSync = (on: boolean) => { setSyncScroll(on); try { localStorage.setItem(SYNC_KEY, on ? "yes" : "no"); } catch { /* storage blocked */ } };
+  const syncTag = typeof window !== "undefined" ? `<script src="${window.location.origin}/sync.js" defer></script>` : `<script src="https://fitcheck.smartsitecp.com/sync.js" defer></script>`;
 
   // Set after the device list loads, so it lands after Next.js applies the page's static title
   useEffect(() => { if (families) document.title = `${site.name} · Responsive tester`; }, [site.name, families]);
@@ -131,6 +190,10 @@ function TesterInner() {
     setGroup(id); setOnly(null); setPickerOpen(false); setFocus(-1);
     stripRef.current?.scrollTo({ left: 0, top: 0 });
   };
+
+  const readyCount = url && ready.gen === gen ? devices.filter((d) => ready.ids.includes(d.id)).length : 0;
+  if (url && devices.length > 0 && readyCount === devices.length && revealedGen !== gen) setRevealedGen(gen);
+  const revealed = revealedGen === gen;
 
   /* Scale for each device. Scroll view: fit the row height. Grid view: a comfortable card height. */
   const scales = useMemo(() => {
@@ -207,7 +270,7 @@ function TesterInner() {
   const fdim = fd ? dims(fd, rot) : null;
 
   return (
-    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] ${site.banner ? "grid-rows-[auto_auto_auto_minmax(0,1fr)_auto]" : "grid-rows-[auto_auto_minmax(0,1fr)_auto]"} bg-cream font-sans text-ink`}>
+    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] ${site.banner || blocked ? "grid-rows-[auto_auto_auto_minmax(0,1fr)_auto]" : "grid-rows-[auto_auto_minmax(0,1fr)_auto]"} bg-cream font-sans text-ink`}>
       {/* Header */}
       <header className="site-header flex flex-wrap items-center gap-4 px-6 pb-2.5 pt-4 max-md:px-4">
         <Link href="/" className="site-logo text-[22px] font-bold tracking-tight text-ink no-underline">
@@ -221,15 +284,32 @@ function TesterInner() {
             onSelect={(v: string) => submit(v)}
             options={recent.map((r) => ({ value: r, label: hostOf(r) }))}
           >
-            <Input size="large" prefix={<LinkOutlined className="text-muted" />} placeholder="Paste a link to see it on a whole group of devices" aria-label="Website link" inputMode="url" autoComplete="off" spellCheck={false} />
+            <Input size="large" prefix={<LinkOutlined className="text-muted" />} placeholder="Paste a link to see it on a whole group of devices" aria-label="Website link" inputMode="url" autoComplete="off" spellCheck={false}
+              onPaste={(e) => {
+                // Pasting something that looks like a web address loads it straight away (no need to press Show)
+                const text = e.clipboardData.getData("text").trim();
+                if (/^(https?:\/\/)?[^\s/]+\.[^\s]+$/i.test(text) && normalize(text)) { e.preventDefault(); submit(text); }
+              }} />
           </AutoComplete>
           <Button type="primary" size="large" htmlType="submit" className="url-submit font-bold">Show</Button>
         </form>
       </header>
 
-      {site.banner && (
-        <div role="status" className="site-banner mx-6 mb-1 rounded-xl border border-solid border-[#f5c3ae] bg-coral-soft px-4 py-2 text-[14px] text-ink max-md:mx-4">
-          <span className="site-banner-text">{site.banner}</span>
+      {(site.banner || blocked) && (
+        <div className="site-notices mx-6 mb-1 grid gap-1.5 max-md:mx-4">
+          {site.banner && (
+            <div role="status" className="site-banner rounded-xl border border-solid border-[#f5c3ae] bg-coral-soft px-4 py-2 text-[14px] text-ink">
+              <span className="site-banner-text">{site.banner}</span>
+            </div>
+          )}
+          {blocked && (
+            <div role="alert" className="frame-blocked-notice rounded-xl border border-solid border-[#f3c969] bg-[#fff8e1] px-4 py-2 text-[14px] text-ink">
+              <b className="frame-blocked-title">{hostOf(blocked.url)} doesn&apos;t allow being shown inside other websites</b>, so the screens stay blank.
+              {blocked.reason && <> It sends <code className="frame-blocked-reason rounded bg-white/70 px-1 text-[13px]">{blocked.reason}</code>.</>}
+              {" "}Only the site&apos;s owner can change that.{" "}
+              <button type="button" className="frame-blocked-help cursor-pointer border-0 bg-transparent p-0 text-[14px] font-semibold text-coral underline" onClick={() => setHelpOpen(true)}>How to allow it</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -314,7 +394,8 @@ function TesterInner() {
                   className="device-name cursor-pointer rounded-md border-0 bg-transparent px-1.5 py-0.5 font-bold text-ink hover:bg-coral-soft hover:text-coral">{d.name}</button>
                 <small className="device-size font-mono text-[11.5px] text-muted">{r.w} × {r.h}</small>
               </div>
-              <DeviceFrame url={url} w={r.w} h={r.h} s={scales[i] ?? 0.3} shape={d.shape} rot={rot} scrolling={scrolling} label={d.name} />
+              <DeviceFrame url={url} w={r.w} h={r.h} s={scales[i] ?? 0.3} shape={d.shape} rot={rot} scrolling={scrolling} label={d.name}
+                onReady={() => markReady(gen, d.id)} reveal={revealed ? undefined : false} />
             </section>
           );
         })}
@@ -329,12 +410,19 @@ function TesterInner() {
             <Button className="footer-nav-next" icon={<RightOutlined />} onClick={() => scrollBy(1)} aria-label="Scroll right" />
           </div>
         )}
-        <span className="footer-status text-sm text-muted"><b className="text-ink">{devices.length} devices</b> · {size === "true" ? "same scale" : "same height"} · {view === "grid" ? "grid" : "scroll"}{rot ? " · landscape" : ""}</span>
+        <span className="footer-status text-sm text-muted"><b className="text-ink">{devices.length} devices</b> · {size === "true" ? "same scale" : "same height"} · {view === "grid" ? "grid" : "scroll"}{rot ? " · landscape" : ""}
+          {url && devices.length > 0 && !revealed && <span className="footer-loading text-coral"> · loading {readyCount}/{devices.length}</span>}</span>
         <span className="flex-1" />
         <div className="footer-actions flex flex-wrap items-center gap-2">
           <Tooltip title={scrolling ? "Each page scrolls inside its frame. Turn off to see only the first screen." : "Only the first screen is shown. Turn on to scroll inside each page."}>
             <label className={`footer-option footer-option--page-scroll${scrolling ? " footer-option--on" : ""}`}>
               <Switch size="small" checked={scrolling} onChange={setScrolling} />Scroll inside pages
+            </label>
+          </Tooltip>
+          <Tooltip title={!syncScroll ? "Each device scrolls on its own." : linkedCount ? `Scrolling one device scrolls the others (${linkedCount} of ${devices.length} connected).` : "Scroll one device and the others follow. Needs a one-line script on the tested site: click Blank screen? for how."}>
+            <label className={`footer-option footer-option--sync-scroll${syncScroll ? " footer-option--on" : ""}`}>
+              <Switch size="small" checked={syncScroll} onChange={changeSync} />Sync scroll
+              {syncScroll && url && revealed && <span className={`footer-sync-state text-[12px] ${linkedCount ? "text-[#2e8b57]" : "text-muted"}`}>{linkedCount ? `${linkedCount}/${devices.length}` : "not connected"}</span>}
             </label>
           </Tooltip>
           <Tooltip title="Turn every device sideways">
@@ -359,9 +447,11 @@ function TesterInner() {
       <Modal className="help-modal" open={helpOpen} onCancel={() => setHelpOpen(false)} footer={<Button type="primary" onClick={() => setHelpOpen(false)}>Got it</Button>} title="Blank screen?">
         <p>Fitcheck shows the site inside a frame, like every online responsive tester. A blank screen usually means one of these:</p>
         <ul className="grid gap-2 pl-5">
-          <li><b>The site blocks framing.</b> It sends <code>X-Frame-Options</code> or a <code>Content-Security-Policy</code> with <code>frame-ancestors</code>. To test your own site, allow this tester&apos;s domain on a staging server.</li>
+          <li><b>The site blocks framing.</b> It sends <code>X-Frame-Options</code> or a <code>Content-Security-Policy</code> with <code>frame-ancestors</code>. To allow this tester on <b>your own</b> site, remove <code>X-Frame-Options</code> and send:<br /><code className="help-frame-header mt-1 inline-block break-all rounded bg-[#f6efe9] px-1.5 py-0.5">Content-Security-Policy: frame-ancestors &apos;self&apos; {typeof window !== "undefined" ? window.location.origin : "https://fitcheck.smartsitecp.com"}</code><br />Sites behind Cloudflare&apos;s bot check may still refuse.</li>
           <li><b>The link is http:// on an https:// page.</b> Browsers block mixed content. Use the https:// address.</li>
           <li><b>The site needs a login or cookie consent.</b> Third-party cookies are often blocked inside frames.</li>
+          <li className="help-sync-scroll"><b>Sync scroll needs one line on the site.</b> Browsers don&apos;t let a page read or move the scroll of another site shown in a frame. On <b>your own</b> site, add this before <code>&lt;/body&gt;</code>, and scrolling one device scrolls all the others:<br />
+            <code className="help-sync-tag mt-1 inline-block break-all rounded bg-[#f6efe9] px-1.5 py-0.5">{syncTag}</code><br />It only runs inside Fitcheck&apos;s frames and only shares the scroll position.</li>
           <li><b>Local addresses.</b> <code>localhost</code> links only work on the computer running that site.</li>
         </ul>
         <p className="text-muted">Sizes are CSS pixels: the width the phone&apos;s browser uses for media queries.</p>
