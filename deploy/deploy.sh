@@ -174,7 +174,9 @@ if [[ $DO_API -eq 1 ]]; then
     (cd "$API_DIR" && $COMPOSER_BIN install --no-dev --optimize-autoloader --no-interaction --no-progress)
   else
     step "Refresh autoloader"
-    (cd "$API_DIR" && $COMPOSER_BIN dump-autoload --optimize --no-dev --no-interaction)
+    # No --no-dev here: vendor/ may be uploaded from a PC with dev packages, and dropping them from the
+    # autoloader while Laravel's package cache still lists them stops the API from starting (500 everywhere)
+    (cd "$API_DIR" && $COMPOSER_BIN dump-autoload --optimize --no-interaction)
   fi
 
   step "Maintenance mode on"
@@ -233,7 +235,7 @@ step "Check the live site"
 ok=0
 for _ in 1 2 3 4 5 6; do
   if curl -fsS --max-time "$HTTP_TIMEOUT" -o /dev/null "$SITE_URL/" \
-     && curl -fsS --max-time "$HTTP_TIMEOUT" "$SITE_URL/api/public/screen-views" | grep -q '"families"'; then ok=1; break; fi
+     && curl -fsS --max-time "$HTTP_TIMEOUT" "$API_CHECK_URL/api/public/screen-views" | grep -q '"families"'; then ok=1; break; fi
   sleep 10
 done
 [[ $ok -eq 1 ]] || { log "Site or API not answering after deploy"; false; }
