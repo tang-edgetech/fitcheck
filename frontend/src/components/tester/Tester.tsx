@@ -30,6 +30,10 @@ function normalize(u: string) {
 }
 function readRecent(): string[] { try { return JSON.parse(localStorage.getItem(RECENT_KEY) || "[]").slice(0, 8); } catch { return []; } }
 function dims(d: Device, rot: boolean) { return rot ? { w: d.h, h: d.w } : { w: d.w, h: d.h }; }
+/** A page address without the site's host or #part, to tell whether two devices are on the same page */
+function pageKey(u: string) {
+  try { const x = new URL(u); return x.pathname.replace(/\/+$/, "") + x.search; } catch { return u; }
+}
 /** Which browser identity the device view uses for this device (see DeviceViewController on the API) */
 function agentOf(d: Device) {
   const apple = /apple|iphone|ipad|mac/i.test(`${d.brand} ${d.name}`);
@@ -138,8 +142,11 @@ function TesterInner() {
   const linked = useRef({ gen: "", set: new WeakSet<Window>() });
   const genRef = useRef(gen);
   useEffect(() => { genRef.current = gen; }, [gen]);
-  /** Where the pages were last scrolled to (0–1), so frames that load later start at the same place */
-  const lastScroll = useRef({ url: "", ratio: 0 });
+  /** Where the pages were last scrolled to (0–1) and on which page, so frames that load later start at the same place */
+  const lastScroll = useRef({ url: "", page: "", ratio: 0 });
+  /** The page each frame is on now (frames report it), and the frame the visitor last used */
+  const frameUrl = useRef(new WeakMap<Window, string>());
+  const lastActor = useRef<{ win: Window | null; at: number }>({ win: null, at: 0 });
   const urlRef = useRef(url);
   useEffect(() => { urlRef.current = url; }, [url]);
   /** Frames report scrolls only once the set is shown; before that, a page settling itself isn't the visitor scrolling */
@@ -152,7 +159,7 @@ function TesterInner() {
   }, []);
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
-      const d = e.data as { fitcheck?: unknown; ratio?: unknown } | null;
+      const d = e.data as { fitcheck?: unknown; ratio?: unknown; url?: unknown } | null;
       if (!d || typeof d !== "object" || typeof d.fitcheck !== "string") return;
       const frames = [...(stripRef.current?.querySelectorAll("iframe") ?? [])];
       const from = frames.find((f) => f.contentWindow === e.source);
@@ -162,14 +169,29 @@ function TesterInner() {
       const set = linked.current.set;
       set.add(e.source as Window);
       setLinkedState({ gen: g, n: frames.filter((f) => f.contentWindow && set.has(f.contentWindow)).length });
-      const last = lastScroll.current.url === urlRef.current ? lastScroll.current.ratio : 0;
-      if (d.fitcheck === "hello" && syncRef.current && last > 0) from.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: last }, "*");
-      // A click in one device (closing a popup, opening a menu, a link) is repeated in the others
-      if (d.fitcheck === "click" && shownRef.current && syncRef.current) {
-        for (const f of frames) if (f !== from) f.contentWindow?.postMessage({ ...d, fitcheck: "clickAt" }, "*");
+      const src = e.source as Window;
+      const page = typeof d.url === "string" ? d.url : "";
+      if (page) frameUrl.current.set(src, page);
+      const ls = lastScroll.current;
+      const last = ls.url === urlRef.current && ls.page === pageKey(page) ? ls.ratio : 0;
+      if (d.fitcheck === "hello" && syncRef.current && last > 0) src.postMessage({ fitcheck: "scrollTo", ratio: last }, "*");
+      // Taps, swipes, typing, keys and inner scrolling in one device are repeated in the others
+      if (d.fitcheck === "act" && shownRef.current) {
+        lastActor.current = { win: src, at: Date.now() };
+        if (syncRef.current) for (const f of frames) if (f !== from) f.contentWindow?.postMessage({ ...d, fitcheck: "actAt" }, "*");
+      }
+      // The device the visitor is using went to another page: the others follow, unless a repeated tap already took them there
+      if ((d.fitcheck === "hello" || d.fitcheck === "url") && page && syncRef.current && shownRef.current
+        && lastActor.current.win === src && Date.now() - lastActor.current.at < 15000) {
+        setTimeout(() => {
+          for (const f of stripRef.current?.querySelectorAll("iframe") ?? []) {
+            const w = f.contentWindow;
+            if (w && w !== src && pageKey(frameUrl.current.get(w) ?? "") !== pageKey(page)) w.postMessage({ fitcheck: "go", url: page }, "*");
+          }
+        }, 1500);
       }
       if (d.fitcheck === "scroll" && shownRef.current && typeof d.ratio === "number") {
-        lastScroll.current = { url: urlRef.current, ratio: d.ratio };
+        lastScroll.current = { url: urlRef.current, page: pageKey(page), ratio: d.ratio };
         if (syncRef.current) for (const f of frames) if (f !== from) f.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: d.ratio }, "*");
       }
     };
@@ -254,9 +276,12 @@ function TesterInner() {
   useEffect(() => {
     shownRef.current = revealed;
     if (!revealed || !syncScroll) return;
-    const last = lastScroll.current.url === url ? lastScroll.current.ratio : 0;
-    if (last <= 0) return;
-    for (const f of stripRef.current?.querySelectorAll("iframe") ?? []) f.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: last }, "*");
+    const ls = lastScroll.current;
+    if (ls.url !== url || ls.ratio <= 0) return;
+    for (const f of stripRef.current?.querySelectorAll("iframe") ?? []) {
+      const at = f.contentWindow && frameUrl.current.get(f.contentWindow);
+      if (!at || pageKey(at) === ls.page) f.contentWindow?.postMessage({ fitcheck: "scrollTo", ratio: ls.ratio }, "*");
+    }
   }, [revealed, gen, url, syncScroll]);
 
   /* Scale for each device. Scroll view: fit the row height. Grid view: a comfortable card height. */
@@ -334,7 +359,7 @@ function TesterInner() {
   const fdim = fd ? dims(fd, rot) : null;
 
   return (
-    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] ${site.banner || (blocked && !deviceView) ? "grid-rows-[auto_auto_auto_minmax(0,1fr)_auto]" : "grid-rows-[auto_auto_minmax(0,1fr)_auto]"} bg-cream font-sans text-ink`}>
+    <div className={`tester-page tester-page--${view} grid h-dvh grid-cols-[minmax(0,1fr)] ${site.banner || (blocked && !deviceView) ? "grid-rows-[auto_auto_auto_auto_minmax(0,1fr)_auto]" : "grid-rows-[auto_auto_auto_minmax(0,1fr)_auto]"} bg-cream font-sans text-ink`}>
       {/* Header */}
       <header className="site-header flex flex-wrap items-center gap-4 px-6 pb-2.5 pt-4 max-md:px-4">
         <Link href="/" className="site-logo text-[22px] font-bold tracking-tight text-ink no-underline">
@@ -425,6 +450,15 @@ function TesterInner() {
         )}
       </div>
 
+      {/* Load progress: fills as each device finishes, then fades out once all are shown. Always 3px tall, so nothing shifts. */}
+      <div className="load-progress h-[3px] flex-none overflow-hidden">
+        {url && devices.length > 0 && (
+          <div key={gen} role="progressbar" aria-label="Loading devices" aria-valuemin={0} aria-valuemax={devices.length} aria-valuenow={revealed ? devices.length : readyCount}
+            className={`load-progress-bar h-full rounded-r-full bg-coral${revealed ? " opacity-0" : ""}`}
+            style={{ width: `${revealed ? 100 : Math.max(4, (readyCount / devices.length) * 100)}%`, transition: "width .3s ease, opacity .4s ease .4s" }} />
+        )}
+      </div>
+
       {/* Devices */}
       <main
         ref={stripRef}
@@ -488,9 +522,9 @@ function TesterInner() {
               <Switch size="small" checked={deviceView} onChange={changeDeviceView} />Device view
             </label>
           </Tooltip>
-          <Tooltip title={!syncScroll ? "Each device scrolls and clicks on its own." : linkedCount ? `Scrolling or clicking in one device does the same in the others, e.g. closing a popup everywhere (${linkedCount} of ${devices.length} connected).` : deviceView ? "Scroll or click in one device and the others follow." : "Scroll one device and the others follow. Without Device view, the site needs a one-line script: click Blank screen? for how."}>
+          <Tooltip title={!syncScroll ? "Each device is used on its own." : linkedCount ? `What you do in one device happens in all of them: scrolling, taps (closing a popup everywhere), swipes, typing and page changes (${linkedCount} of ${devices.length} connected).` : deviceView ? "Scroll, tap, swipe or type in one device and the others follow." : "Scroll, tap, swipe or type in one device and the others follow. Without Device view, the site needs a one-line script: click Blank screen? for how."}>
             <label className={`footer-option footer-option--sync-scroll${syncScroll ? " footer-option--on" : ""}`}>
-              <Switch size="small" checked={syncScroll} onChange={changeSync} />Sync scroll &amp; clicks
+              <Switch size="small" checked={syncScroll} onChange={changeSync} />Mirror actions
               {syncScroll && url && revealed && <span className={`footer-sync-state text-[12px] ${linkedCount ? "text-[#2e8b57]" : "text-muted"}`}>{linkedCount ? `${linkedCount}/${devices.length}` : "not connected"}</span>}
             </label>
           </Tooltip>
@@ -519,7 +553,7 @@ function TesterInner() {
           <li><b>The site blocks framing.</b> It sends <code>X-Frame-Options</code> or a <code>Content-Security-Policy</code> with <code>frame-ancestors</code>. To allow this tester on <b>your own</b> site, remove <code>X-Frame-Options</code> and send:<br /><code className="help-frame-header mt-1 inline-block break-all rounded bg-[#f6efe9] px-1.5 py-0.5">Content-Security-Policy: frame-ancestors &apos;self&apos; {typeof window !== "undefined" ? window.location.origin : "https://fitcheck.smartsitecp.com"}</code><br />Sites behind Cloudflare&apos;s bot check may still refuse.</li>
           <li><b>The link is http:// on an https:// page.</b> Browsers block mixed content. Use the https:// address.</li>
           <li><b>The site needs a login or cookie consent.</b> Third-party cookies are often blocked inside frames.</li>
-          <li className="help-sync-scroll"><b>Sync scroll without Device view needs one line on the site.</b> With Device view on, it works on any site. Browsers don&apos;t let a page read or move the scroll of another site shown in a frame. On <b>your own</b> site, add this before <code>&lt;/body&gt;</code>, and scrolling one device scrolls all the others:<br />
+          <li className="help-sync-scroll"><b>Mirror actions without Device view needs one line on the site.</b> With Device view on, it works on any site. Browsers don&apos;t let a page see or repeat what you do in another site shown in a frame. On <b>your own</b> site, add this before <code>&lt;/body&gt;</code>, and scrolling, tapping, swiping or typing in one device does the same in all the others:<br />
             <code className="help-sync-tag mt-1 inline-block break-all rounded bg-[#f6efe9] px-1.5 py-0.5">{syncTag}</code><br />It only runs inside Fitcheck&apos;s frames and only shares the scroll position.</li>
           <li><b>Local addresses.</b> <code>localhost</code> links only work on the computer running that site.</li>
         </ul>
