@@ -453,9 +453,13 @@ function TesterInner() {
       {/* Load progress: fills as each device finishes, then fades out once all are shown. Always 3px tall, so nothing shifts. */}
       <div className="load-progress h-[3px] flex-none overflow-hidden">
         {url && devices.length > 0 && (
+          // Two bars in one: one creeps forward on its own (so it never looks stuck), the other jumps with each device that finishes; the longer one shows
           <div key={gen} role="progressbar" aria-label="Loading devices" aria-valuemin={0} aria-valuemax={devices.length} aria-valuenow={revealed ? devices.length : readyCount}
-            className={`load-progress-bar h-full rounded-r-full bg-coral${revealed ? " opacity-0" : ""}`}
-            style={{ width: `${revealed ? 100 : Math.max(4, (readyCount / devices.length) * 100)}%`, transition: "width .3s ease, opacity .4s ease .4s" }} />
+            className={`load-progress-track relative h-full${revealed ? " opacity-0" : ""}`} style={{ transition: "opacity .4s ease .4s" }}>
+            {!revealed && <div className="load-progress-trickle absolute inset-y-0 left-0 rounded-r-full bg-coral" />}
+            <div className="load-progress-bar absolute inset-y-0 left-0 rounded-r-full bg-coral"
+              style={{ width: `${revealed ? 100 : (readyCount / devices.length) * 100}%`, transition: "width .3s ease" }} />
+          </div>
         )}
       </div>
 

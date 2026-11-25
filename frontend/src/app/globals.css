@@ -93,3 +93,8 @@ body { margin: 0; }
 .sortable-table .sortable-item.is-drop-after > td { box-shadow: inset 0 -2px 0 #2f5bea; }
 .sortable-list .sortable-item.is-drop-before { box-shadow: 0 -2px 0 #2f5bea; }
 .sortable-list .sortable-item.is-drop-after { box-shadow: 0 2px 0 #2f5bea; }
+
+/* Tester load bar: creeps towards 80% over the 12 s the tester waits at most, while the real count catches up */
+@keyframes fc-trickle { from { width: 4%; } to { width: 80%; } }
+.load-progress-trickle { animation: fc-trickle 12s cubic-bezier(.25, .5, .45, 1) forwards; }
+@media (prefers-reduced-motion: reduce) { .load-progress-trickle { animation: none; width: 4%; } }
