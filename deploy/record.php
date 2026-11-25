@@ -71,3 +71,18 @@ $lines = is_file($file) ? array_slice(file($file, FILE_IGNORE_NEW_LINES | FILE_S
 $lines[] = json_encode($row, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 file_put_contents("$file.tmp", implode("\n", $lines)."\n");
 rename("$file.tmp", $file);
+
+// The check above was saved before the pull, so "Running now" would show the old commit until the next cron run: bring it up to date
+$checkFile = "$dir/last-check.json";
+$check = is_file($checkFile) ? json_decode((string) file_get_contents($checkFile), true) : null;
+if (is_array($check) && $head) {
+    $check['head'] = $head;
+    if ($row['result'] === 'success' && ($check['remote']['hash'] ?? null) === $head['hash']) {
+        $check['result'] = 'up-to-date';
+        $check['message'] = 'Deployed '.$head['hash'];
+    } elseif ($row['result'] === 'failed') {
+        $check['message'] = 'Deploy failed at: '.($row['failed_step'] ?? 'unknown step');
+    }
+    file_put_contents("$checkFile.tmp", json_encode($check, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    rename("$checkFile.tmp", $checkFile);
+}
