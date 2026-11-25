@@ -11,7 +11,7 @@ interface Run {
   started_at: string; finished_at: string; seconds: number; result: "success" | "failed"; failed_step: string | null; exit_code: number | null;
   trigger: string; branch: string | null; from: string | null; to: string | null; parts: string[]; note: string | null; commits: Commit[]; log_tail: string | null;
 }
-interface Data { check: Check | null; runs: Run[]; repo: { branch: string | null; commit: string | null } | null }
+interface Data { check: Check | null; runs: Run[]; repo: { branch: string | null; commit: string | null } | null; github?: Commit | null }
 
 const ago = (iso: string) => {
   const s = Math.max(0, (Date.now() - new Date(iso).getTime()) / 1000);
@@ -47,6 +47,9 @@ export default function DeployLog() {
   useEffect(() => { load(); }, [load]);
 
   const check = data?.check, last = data?.runs[0];
+  // GitHub asked just now (public repositories), else what the cron job saw at its last check
+  const latest = data?.github ?? check?.remote;
+  const waiting = !!(latest && check?.head && latest.hash.slice(0, 7) !== check.head.hash.slice(0, 7));
   const stale = check && loadedAt - new Date(check.checked_at).getTime() > 60 * 60 * 1000;
 
   return (
@@ -64,7 +67,7 @@ export default function DeployLog() {
       {check && (
         <Descriptions className="deploy-summary mb-4" size="small" column={1} bordered>
           <Descriptions.Item label="Running now">{commitText(check.head)}{check.branch && <Tag className="deploy-branch ml-2">{check.branch}</Tag>}</Descriptions.Item>
-          <Descriptions.Item label="Latest on GitHub">{commitText(check.remote)}</Descriptions.Item>
+          <Descriptions.Item label="Latest on GitHub">{commitText(latest)}{waiting && <Tag className="deploy-tag deploy-tag--waiting ml-2" color="gold">Deploys at the next check (every 15 min)</Tag>}</Descriptions.Item>
           <Descriptions.Item label="Last check">{CHECK_TAG[check.result]} {when(check.checked_at)}{check.message && <div className="deploy-check-message mt-1 text-[12px] text-[#5c6978]">{check.message}</div>}</Descriptions.Item>
           <Descriptions.Item label="Last deploy">{last ? <>{runTag(last)} {when(last.finished_at)} · took {dur(last.seconds)}{last.result === "failed" && last.failed_step && <> · stopped at <b>{last.failed_step}</b></>}</> : "None yet"}</Descriptions.Item>
         </Descriptions>
