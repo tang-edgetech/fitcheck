@@ -291,8 +291,10 @@ function TesterInner() {
     const rowH = view === "scroll" ? box.h - 70 : Math.min(CARD_H[card], Math.max(260, box.h - 90));
     const maxH = Math.max(...ds.map((x) => x.h + (x.d.shape === "browser" ? 30 : 0)));
     const maxW = Math.max(...ds.map((x) => x.w));
+    // On a phone the header and footer leave little height, so fitting it makes the devices tiny: show them 25% bigger (the row scrolls down a little)
+    const boost = box.w < 736 ? 1.25 : 1;
     return ds.map((x) => {
-      let s = size === "true" ? Math.min(1, (rowH - 30) / maxH) : fitScale(99999, rowH, x.w, x.h, x.d.shape);
+      let s = (size === "true" ? Math.min(1, (rowH - 30) / maxH) : fitScale(99999, rowH, x.w, x.h, x.d.shape)) * boost;
       if (view === "grid") s = Math.min(s, (box.w - 40) / (size === "true" ? maxW + 30 : x.w + 30)); // never wider than the page
       return Math.max(0.05, s);
     });
@@ -475,7 +477,7 @@ function TesterInner() {
         onDragStart={(e) => e.preventDefault()}
         aria-label={`${active?.name ?? "Devices"}, ${view === "grid" ? "grid" : "scrolling row"}`}
         className={`site-main device-list device-list--${view} ` + (view === "scroll"
-          ? "flex snap-x snap-proximity scroll-px-6 items-end gap-10 overflow-x-auto overflow-y-hidden px-6 pb-4 pt-2.5 max-md:scroll-px-4 max-md:gap-6 max-md:px-4"
+          ? "flex snap-x snap-proximity scroll-px-6 items-end gap-10 overflow-x-auto overflow-y-hidden px-6 max-md:items-start max-md:overflow-y-auto pb-4 pt-2.5 max-md:scroll-px-4 max-md:gap-6 max-md:px-4"
           : "flex flex-wrap content-start items-end justify-center gap-x-10 gap-y-12 overflow-y-auto px-6 pb-10 pt-2.5 max-md:gap-x-6 max-md:px-4")}
       >
         {loadError && <p className="device-list-message m-auto max-w-md text-center text-muted">{loadError}</p>}
